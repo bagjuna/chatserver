@@ -44,6 +44,7 @@ public class MemberService {
         return member;
     }
 
+
     public Member login(MemberLoginReqDto memberLoginReqDto) {
         Member member = memberRepository.findByEmail(memberLoginReqDto.getEmail()).orElseThrow(() ->
                 new IllegalArgumentException("가입되지 않은 이메일입니다."));
