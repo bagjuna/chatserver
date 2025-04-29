@@ -33,7 +33,7 @@ public class Securityconfigs {
                 .httpBasic(AbstractHttpConfigurer::disable)  // HTTP Basic 인증 비활성화
                 // 특정 url패턴에서는 Authentication 객체 요구하지 않음.(인증처리 제외)
                 .authorizeHttpRequests(a ->
-                        a.requestMatchers("/member/create", "/member/doLogin", "/connect").permitAll().anyRequest().authenticated())
+                        a.requestMatchers("/member/create", "/member/doLogin", "/connect/**").permitAll().anyRequest().authenticated())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 방식 사용하지 않음
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
