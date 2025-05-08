@@ -1,6 +1,7 @@
 package com.example.chatserver.chat.controller;
 
-import com.example.chatserver.chat.dto.ChatMessageReqDto;
+import com.example.chatserver.chat.dto.ChatMessageDto;
+import com.example.chatserver.chat.service.ChatService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -11,8 +12,11 @@ public class StompController {
 
     private final SimpMessageSendingOperations messageTemplate;
 
-    public StompController(SimpMessageSendingOperations messageTemplate) {
+    private final ChatService chatService;
+
+    public StompController(SimpMessageSendingOperations messageTemplate, ChatService chatService) {
         this.messageTemplate = messageTemplate;
+        this.chatService = chatService;
     }
 
     // 방법 1: MessageMapping(수신)과 SendTo(topic에 메시지전달)를 사용하여 메시지 처리
@@ -25,11 +29,12 @@ public class StompController {
 //        return message;
 //    }
 //
-    // 방법 2: MessageMapping 어노테이셔만 활용
+    // 방법 2: MessageMapping 어노테이션만 활용
     @MessageMapping("/{roomId}")
-    public void sendMessage(@DestinationVariable Long roomId, ChatMessageReqDto chatMessageReqDto) {
-        System.out.println(chatMessageReqDto.getMessage());
-        messageTemplate.convertAndSend("/topic/" + roomId, chatMessageReqDto);
+    public void sendMessage(@DestinationVariable Long roomId, ChatMessageDto chatMessageDto) {
+        System.out.println(chatMessageDto.getMessage());
+        chatService.saveMessage(roomId, chatMessageDto);
+        messageTemplate.convertAndSend("/topic/" + roomId, chatMessageDto);
     }
 
 
