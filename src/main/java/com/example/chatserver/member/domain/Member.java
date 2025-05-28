@@ -1,5 +1,6 @@
 package com.example.chatserver.member.domain;
 
+import com.example.chatserver.common.domain.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +11,7 @@ import static lombok.AccessLevel.PROTECTED;
 @AllArgsConstructor
 @NoArgsConstructor(access = PROTECTED)
 @Getter
-public class Member {
+public class Member extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

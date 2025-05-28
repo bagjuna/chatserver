@@ -1,7 +1,10 @@
 spring:
+  redis:
+    host: localhost
+    port: 6379
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/chatdb?useSSL=false
+    url: jdbc:mysql://localhost:3306/chatdb?useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 1234
   jpa:
@@ -10,7 +13,7 @@ spring:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     generate-ddl: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     show-sql: true
 
 jwt:

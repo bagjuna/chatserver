@@ -53,7 +53,7 @@ public class Securityconfigs {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public PasswordEncoder makePassword() {
         // {bcrypt} prefix를 지원하는 DelegatingPasswordEncoder
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
