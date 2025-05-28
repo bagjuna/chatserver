@@ -4,7 +4,6 @@ import com.example.chatserver.chat.dto.ChatMessageDto;
 import com.example.chatserver.chat.dto.ChatRoomListResDto;
 import com.example.chatserver.chat.dto.MyChatListResDto;
 import com.example.chatserver.chat.service.ChatService;
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,7 +49,7 @@ public class ChatController {
     }
 
     // 채팅메시지 읽음처리
-    @PostMapping("/read/{roomId}")
+    @PostMapping("/room/{roomId}/read")
     public ResponseEntity<?> readChatMessage(@PathVariable String roomId) {
         chatService.messageRead(Long.parseLong(roomId));
         return ResponseEntity.ok().build();
@@ -60,7 +59,7 @@ public class ChatController {
     @GetMapping("/my/rooms")
     public ResponseEntity<?> getMyChatRoomList() {
         List<MyChatListResDto> myChatRoomList = chatService.getMyChatRooms();
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        return new ResponseEntity<>(myChatRoomList, HttpStatus.OK);
     }
 
 
@@ -72,4 +71,10 @@ public class ChatController {
     }
 
 
+    // 개인 채팅방 개설 또는 roomId return
+    @PostMapping("/room/private/create")
+    public ResponseEntity<?> createPrivateChatRoom(@RequestParam Long otherMemberId) {
+        Long roomId = chatService.getOrCreatePrivateRoom(otherMemberId);
+        return new ResponseEntity<>(roomId, HttpStatus.OK);
+    }
 }

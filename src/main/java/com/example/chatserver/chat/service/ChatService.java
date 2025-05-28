@@ -14,6 +14,7 @@ import com.example.chatserver.chat.repository.ReadStatusRepository;
 import com.example.chatserver.member.domain.Member;
 import com.example.chatserver.member.repository.MemberRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,6 +119,10 @@ public class ChatService {
                 () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
         );
 
+        if (chatRoom.getIsGroupChat().equals("N")) {
+            throw new IllegalArgumentException("그룹채팅이 아닙니다.");
+        }
+
         // 이미 참여자인지 검증
         Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
         if(!participant.isPresent()){
@@ -173,7 +178,7 @@ public class ChatService {
     }
 
     public boolean isRoomParticipant(String email, Long roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(Long.parseLong(email)).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
         Member member = memberRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
@@ -234,4 +239,35 @@ public class ChatService {
         }
 
     }
+
+    public Long getOrCreatePrivateRoom(Long otherMemberId) {
+        Member member = memberRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(
+                () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
+        );
+
+        Member otherMember = memberRepository.findById(otherMemberId).orElseThrow(
+                () -> new EntityNotFoundException("상대방을 찾을 수 없습니다.")
+        );
+
+        Optional<ChatRoom> chatRoom = chatParticipantRepository.findChatRoomIdExistingPrivateRoom(member.getId(), otherMember.getId());
+        if(chatRoom.isPresent()) {
+            // 이미 존재하는 개인 채팅방이 있다면
+            return chatRoom.get().getId();
+        }
+        // 만약 1:1 개인 채팅방이 없다면 기존 채팅방을 생성
+        ChatRoom newRoom = ChatRoom.builder()
+                .isGroupChat("N")
+                .name(member.getName() + "-" + otherMember.getName())
+                .build();
+
+        chatRoomRepository.save(newRoom);
+
+        // 두사람 모두 참여자로 새롭게 추가
+        addParticipant(newRoom, member);
+        addParticipant(newRoom, otherMember);
+
+        return newRoom.getId();
+    }
+
+
 }

@@ -28,10 +28,11 @@ public class StompHandler implements ChannelInterceptor {
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         final StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
-        if(StompCommand.CONNECT.equals(accessor.getCommand())){
+        if(StompCommand.CONNECT == accessor.getCommand()){
             System.out.println("connect 요청시 토큰 유효성 검증");
             String bearerToken = accessor.getFirstNativeHeader("Authorization");
             String token = bearerToken.substring(7);
+
             Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
@@ -49,11 +50,13 @@ public class StompHandler implements ChannelInterceptor {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
+
             String email = claims.getSubject();
             String roomId = accessor.getDestination().split("/")[2];
             if (!chatService.isRoomParticipant(email, Long.parseLong(roomId))) {
                 throw new AuthenticationServiceException("해당 room에 권한이 없습니다.");
             }
+
 
         }
 
