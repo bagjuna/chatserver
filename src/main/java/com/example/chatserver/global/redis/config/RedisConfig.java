@@ -22,6 +22,9 @@ public class RedisConfig {
     @Value("${spring.redis.port}")
     private int port;
 
+    @Value("${spring.redis.password}")
+    private String password;
+
     // 연결 기본 객체
     @Bean
     @Qualifier("chatPubSub")
@@ -29,6 +32,7 @@ public class RedisConfig {
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
         configuration.setHostName(host);
         configuration.setPort(port);
+        configuration.setPassword(password);
         // redis pub/sub에서는 특정 데이터베이스에 의존하지 않음
         // configuration.setDatabase(0); // 기본 데이터베이스 번호
         return new LettuceConnectionFactory(configuration);
