@@ -35,11 +35,11 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return "";
+        return member.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return member.getEmail();
     }
 }

@@ -30,6 +30,7 @@ public enum ErrorCode {
     REQUIRES_SIGNUP(HttpStatus.UNAUTHORIZED, "회원가입이 필요합니다. 쿠키에 sessionId가 발급되었습니다. '/auth/signup' 으로 가입 요청을 진행해주세요."),
     WRONG_OAUTH2_PROVIDER(HttpStatus.UNAUTHORIZED, "잘못된 OAuth 2.0 Provider 입니다. 응답 데이터 내 provider 로 이미 가입되어 있습니다."),
     STOMP_CONNECT_JWT_AUTHENTICATION_FAIL(HttpStatus.UNAUTHORIZED, "STOMP 연결을 위한 JWT 인증에 실패하였습니다."),
+    PASSWORD_INCORRECT(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다."),
 
     // FORBIDDEN
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다."),
@@ -39,7 +40,8 @@ public enum ErrorCode {
     USER_NOT_ALLOWED_DELETE_COMMENT(HttpStatus.FORBIDDEN, "해당 댓글을 삭제할 권한이 없습니다."),
 
     // INTERNAL SERVER ERROR
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다.");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
+    ;
 
     private final HttpStatus status;
     private final String message;

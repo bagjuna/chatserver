@@ -22,7 +22,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 클라이언트에서 /ws로 연결 요청이 들어오면, 이 endpoint로 연결됨
         registry.addEndpoint("/connect")
                 // cors 설정
-                .setAllowedOrigins("http://localhost:3000")
+                .setAllowedOrigins("http://localhost:5173")
                 // ws://가 아닌 http://로 연결 요청이 들어올 경우, SockJS를 사용하여 연결
                 .withSockJS();
     }
