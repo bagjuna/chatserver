@@ -1,6 +1,5 @@
 package com.example.chatserver.domain.chat.config;
 
-import java.util.Date;
 
 import javax.crypto.SecretKey;
 
@@ -9,8 +8,6 @@ import com.example.chatserver.global.common.error.BaseException;
 import com.example.chatserver.global.common.error.ErrorCode;
 import com.example.chatserver.global.security.jwt.JwtUtil;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 

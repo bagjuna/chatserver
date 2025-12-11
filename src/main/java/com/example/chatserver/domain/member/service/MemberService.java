@@ -7,6 +7,7 @@ import com.example.chatserver.domain.member.dto.request.LoginRequest;
 import com.example.chatserver.domain.member.dto.request.SignupRequest;
 import com.example.chatserver.domain.member.entity.Role;
 import com.example.chatserver.domain.member.exception.AlreadyExistEmailException;
+import com.example.chatserver.domain.member.exception.PasswordIncorrectException;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.example.chatserver.global.security.jwt.JwtUtil;
 
@@ -62,10 +63,11 @@ public class MemberService {
 	}
 
 	public ResponseEntity<?> login(LoginRequest loginRequest) {
-		Member member = memberRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() ->
-			new IllegalArgumentException("가입되지 않은 이메일입니다."));
+		Member member = memberRepository.findByEmail(loginRequest.getEmail()).orElseThrow(
+			AlreadyExistEmailException::new);
+
 		if (!passwordEncoder.matches(loginRequest.getPassword(), member.getPassword())) {
-			throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+			throw new PasswordIncorrectException();
 		}
 
 
@@ -86,7 +88,7 @@ public class MemberService {
 		// Redis에 Refresh Token 저장
 		// Key: "RT:1", Value: "eyJ...", Duration: 30일 (JwtUtil 설정을 따름)
 		redisTemplate.opsForValue().set(
-			"RT:" + member.getPublicId(),
+			"RT:" + member.getId(),
 			refreshToken,
 			jwtUtil.getRefreshTokenMaxAgeInSeconds(), // 예: 1209600 (14일)
 			java.util.concurrent.TimeUnit.SECONDS
