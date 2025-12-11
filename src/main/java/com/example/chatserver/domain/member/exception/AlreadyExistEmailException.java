@@ -1,0 +1,10 @@
+package com.example.chatserver.domain.member.exception;
+
+import com.example.chatserver.global.common.error.BaseException;
+import com.example.chatserver.global.common.error.ErrorCode;
+
+public class AlreadyExistEmailException  extends BaseException {
+	public AlreadyExistEmailException() {
+		super(ErrorCode.ALREADY_EXIST_EMAIL);
+	}
+}
