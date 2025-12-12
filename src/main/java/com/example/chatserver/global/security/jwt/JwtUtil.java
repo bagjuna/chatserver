@@ -11,6 +11,8 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
 
+import com.example.chatserver.global.common.error.BaseException;
+
 @Component
 @RequiredArgsConstructor
 public class JwtUtil {
@@ -51,7 +53,7 @@ public class JwtUtil {
         return null;
     }
 
-    public void validateToken(String token) {
+    public void validateToken(String token){
         parseClaims(token);
     }
 

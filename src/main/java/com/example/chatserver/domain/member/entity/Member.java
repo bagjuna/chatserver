@@ -35,7 +35,6 @@ public class Member extends BaseTimeEntity {
 
 
 
-
     /**
      * 테스트용 User 객체를 생성
      * @param memberId 테스트용 memberId
