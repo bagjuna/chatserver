@@ -86,7 +86,7 @@ public class MemberService {
 		// Redis에 Refresh Token 저장
 		// Key: "RT:1", Value: "eyJ...", Duration: 30일 (JwtUtil 설정을 따름)
 		redisTemplate.opsForValue().set(
-			"RT:" + member.getPublicId(),
+			"RT:" + member.getId(),
 			refreshToken,
 			jwtUtil.getRefreshTokenMaxAgeInSeconds(), // 예: 1209600 (14일)
 			java.util.concurrent.TimeUnit.SECONDS

@@ -3,6 +3,7 @@ package com.example.chatserver.domain.member.controller;
 import com.example.chatserver.domain.member.dto.response.MemberListResponse;
 import com.example.chatserver.domain.member.dto.request.LoginRequest;
 import com.example.chatserver.domain.member.dto.request.SignupRequest;
+import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.service.MemberService;
 import com.example.chatserver.global.security.userdetails.CustomUserDetails;
 
