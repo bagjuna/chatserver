@@ -20,6 +20,15 @@ spring:
       ddl-auto: none
     show-sql: true
 
+
 jwt:
   secretKey: ${secretKey}
   expiration: 86400 # 24 hours
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+

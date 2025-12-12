@@ -79,6 +79,13 @@ public class StompHandler implements ChannelInterceptor {
 				throw new AuthenticationServiceException("해당 room에 권한이 없습니다.");
 			}
 
+		} else if (StompCommand.MESSAGE.equals(accessor.getCommand())) {
+			System.out.println("Message 검증");
+		}else if(StompCommand.DISCONNECT.equals(accessor.getCommand())) {
+			System.out.println("DISCONNECT 요청");
+		}
+		else  if (StompCommand.SEND.equals(accessor.getCommand())) {
+			System.out.println("SEND 검증");
 		}
 
 		return message;

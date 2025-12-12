@@ -6,7 +6,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
 import com.example.chatserver.global.common.error.ErrorCode;
-import com.example.chatserver.global.common.error.ErrorResponse;
+import com.example.chatserver.global.common.BaseResponse.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.ServletException;
