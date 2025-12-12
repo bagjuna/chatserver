@@ -1,4 +1,4 @@
-package com.example.chatserver.global.common.error;
+package com.example.chatserver.global.common.BaseResponse;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 
+import com.example.chatserver.global.common.error.ErrorCode;
+
 @Data
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PRIVATE)
@@ -15,7 +17,7 @@ public class ErrorResponse<T> {
     private final int status;
     private final String error;
     private final String path;
-
+    private final String code; // 추가적인 에러 코드
     @Builder.Default
     private final LocalDateTime timestamp = LocalDateTime.now();
 

@@ -9,6 +9,9 @@ import com.example.chatserver.domain.member.entity.Role;
 import com.example.chatserver.domain.member.exception.AlreadyExistEmailException;
 import com.example.chatserver.domain.member.exception.PasswordIncorrectException;
 import com.example.chatserver.domain.member.repository.MemberRepository;
+import com.example.chatserver.global.common.BaseResponse.ErrorResponse;
+import com.example.chatserver.global.common.error.BaseException;
+import com.example.chatserver.global.common.error.ErrorCode;
 import com.example.chatserver.global.security.jwt.JwtUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +43,7 @@ public class MemberService {
 		this.passwordEncoder = passwordEncoder;
 	}
 
-	public ResponseEntity<?> signup(SignupRequest signupRequest) {
+	public ResponseEntity<LoginResponse> signup(SignupRequest signupRequest) {
 		// 이미 가입되어 있는 회원인지 확인
 		if (memberRepository.findByEmail(signupRequest.getEmail()).isPresent()) {
 			// 중복 이메일 에러 throws
@@ -61,7 +64,7 @@ public class MemberService {
 
 	}
 
-	public ResponseEntity<?> login(LoginRequest loginRequest) {
+	public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
 		Member member = memberRepository.findByEmail(loginRequest.getEmail()).orElseThrow(
 			AlreadyExistEmailException::new);
 
@@ -80,13 +83,13 @@ public class MemberService {
 		return memberListResponses;
 	}
 
-	private ResponseEntity<?> getAccessToken(Member member) {
+	private ResponseEntity<LoginResponse> getAccessToken(Member member) {
 		String accessToken = jwtUtil.createAccessToken(member.getPublicId());
 		String refreshToken = jwtUtil.createRefreshToken(member.getPublicId());
 		// Redis에 Refresh Token 저장
 		// Key: "RT:1", Value: "eyJ...", Duration: 30일 (JwtUtil 설정을 따름)
 		redisTemplate.opsForValue().set(
-			"RT:" + member.getId(),
+			"RT:" + member.getPublicId(),
 			refreshToken,
 			jwtUtil.getRefreshTokenMaxAgeInSeconds(), // 예: 1209600 (14일)
 			java.util.concurrent.TimeUnit.SECONDS
@@ -112,22 +115,21 @@ public class MemberService {
 
 	}
 
-	public ResponseEntity<?> reissueToken(String refreshToken) {
+	public ResponseEntity<LoginResponse> reissueToken(String refreshToken) {
 		// 1. Refresh Token 검증
 		jwtUtil.validateToken(refreshToken);
 
 		// 2. Refresh Token에서 Public ID 추출
 		String publicId = jwtUtil.getUserIdFromToken(refreshToken);
-
 		// 3. Public ID로 회원 조회
 		Member member = memberRepository.findByPublicId(publicId).orElseThrow(
-			() -> new RuntimeException("Member not found")
+			() -> new BaseException(ErrorCode.MEMBER_NOT_FOUND)
 		);
 
 		// 4. Redis에서 저장된 Refresh Token과 비교
-		String storedRefreshToken = redisTemplate.opsForValue().get("RT:" + member.getPublicId());
+		String storedRefreshToken = redisTemplate.opsForValue().get("RT:" + publicId);
 		if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
-			return ResponseEntity.status(401).body("Refresh Token does not match");
+			throw new BaseException(ErrorCode.INVALID_REFRESH_TOKEN);
 		}
 
 		// 5. 새로운 Access Token 생성

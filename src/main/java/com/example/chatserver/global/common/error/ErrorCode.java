@@ -19,6 +19,7 @@ public enum ErrorCode {
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 ID의 게시물이 없습니다."),
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 ID의 댓글이 없습니다."),
     ALREADY_EXIST_EMAIL(HttpStatus.NOT_FOUND, "이미 존재하는 이메일입니다."),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 ID의 멤버가 없습니다."),
 
     // METHOD NOT ALLOWED
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다."),
@@ -31,6 +32,8 @@ public enum ErrorCode {
     WRONG_OAUTH2_PROVIDER(HttpStatus.UNAUTHORIZED, "잘못된 OAuth 2.0 Provider 입니다. 응답 데이터 내 provider 로 이미 가입되어 있습니다."),
     STOMP_CONNECT_JWT_AUTHENTICATION_FAIL(HttpStatus.UNAUTHORIZED, "STOMP 연결을 위한 JWT 인증에 실패하였습니다."),
     PASSWORD_INCORRECT(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다."),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
+    REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 존재하지 않습니다."),
 
     // FORBIDDEN
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "권한이 없습니다."),

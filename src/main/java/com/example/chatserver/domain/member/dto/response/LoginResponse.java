@@ -1,6 +1,5 @@
 package com.example.chatserver.domain.member.dto.response;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -14,6 +13,9 @@ public class LoginResponse {
 
 	private String name;
 	private String email;
+
+	private String profileImage; // 프사 URL (없으면 null)
+
 	@JsonIgnore
 	private String password;
 	@JsonIgnore

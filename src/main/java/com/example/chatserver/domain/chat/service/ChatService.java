@@ -131,7 +131,8 @@ public class ChatService {
 
 
     }
-        // chatParticipant 객체 생성 후 저장
+
+    // chatParticipant 객체 생성 후 저장
     public void addParticipant(ChatRoom chatRoom, Member member) {
         ChatParticipant chatParticipant = ChatParticipant.builder()
                 .chatRoom(chatRoom)
