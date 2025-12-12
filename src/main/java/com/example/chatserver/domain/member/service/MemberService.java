@@ -13,7 +13,6 @@ import com.example.chatserver.global.security.jwt.JwtUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -70,7 +69,6 @@ public class MemberService {
 			throw new PasswordIncorrectException();
 		}
 
-
 		return getAccessToken(member);
 	}
 
@@ -112,6 +110,45 @@ public class MemberService {
 				.build()
 			);
 
+	}
+
+	public ResponseEntity<?> reissueToken(String refreshToken) {
+		// 1. Refresh Token 검증
+		jwtUtil.validateToken(refreshToken);
+
+		// 2. Refresh Token에서 Public ID 추출
+		String publicId = jwtUtil.getUserIdFromToken(refreshToken);
+
+		// 3. Public ID로 회원 조회
+		Member member = memberRepository.findByPublicId(publicId).orElseThrow(
+			() -> new RuntimeException("Member not found")
+		);
+
+		// 4. Redis에서 저장된 Refresh Token과 비교
+		String storedRefreshToken = redisTemplate.opsForValue().get("RT:" + member.getPublicId());
+		if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+			return ResponseEntity.status(401).body("Refresh Token does not match");
+		}
+
+		// 5. 새로운 Access Token 생성
+		String newAccessToken = jwtUtil.createAccessToken(publicId);
+
+		ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+			.path("/")
+			.sameSite("None")
+			.secure(true) // HTTPS 사용 시
+			.httpOnly(true)
+			.maxAge(jwtUtil.getRefreshTokenMaxAgeInSeconds())
+			.build();
+
+		return ResponseEntity.ok()
+			.header("Set-Cookie", refreshCookie.toString())
+			.body(LoginResponse.builder()
+				.email(member.getEmail())
+				.name(member.getName())
+				.accessToken(newAccessToken)
+				.build()
+			);
 	}
 
 }

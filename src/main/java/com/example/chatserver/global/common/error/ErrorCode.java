@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     // BAD REQUEST
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다. 필요한 요청 데이터가 없거나, 지원되지 않는 형식입니다."),
-    PROVIDER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 OAuth Provider 입니다."),
     USERNAME_TAKEN(HttpStatus.BAD_REQUEST, "이미 사용 중인 username 입니다."),
     INVALID_USERNAME(HttpStatus.BAD_REQUEST, "유효하지 않은 username 입니다."),
     INVALID_LOGIN_SESSION(HttpStatus.BAD_REQUEST, "유효하지 않은 로그인 세션입니다. 다시 시도해주세요."),
@@ -27,6 +26,7 @@ public enum ErrorCode {
     // UNAUTHORIZED
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요한 요청입니다."),
     JWT_AUTHENTICATION_FAIL(HttpStatus.UNAUTHORIZED, "JWT 인증에 실패하였습니다."),
+    JWT_TOKEN_MISSING(HttpStatus.UNAUTHORIZED, "JWT 토큰이 없습니다."),
     REQUIRES_SIGNUP(HttpStatus.UNAUTHORIZED, "회원가입이 필요합니다. 쿠키에 sessionId가 발급되었습니다. '/auth/signup' 으로 가입 요청을 진행해주세요."),
     WRONG_OAUTH2_PROVIDER(HttpStatus.UNAUTHORIZED, "잘못된 OAuth 2.0 Provider 입니다. 응답 데이터 내 provider 로 이미 가입되어 있습니다."),
     STOMP_CONNECT_JWT_AUTHENTICATION_FAIL(HttpStatus.UNAUTHORIZED, "STOMP 연결을 위한 JWT 인증에 실패하였습니다."),

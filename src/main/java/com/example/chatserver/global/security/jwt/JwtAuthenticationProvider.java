@@ -1,9 +1,15 @@
 package com.example.chatserver.global.security.jwt;
 
+import java.util.Collection;
+
 import lombok.RequiredArgsConstructor;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
@@ -15,6 +21,7 @@ import com.example.chatserver.global.common.error.ErrorCode;
 @RequiredArgsConstructor
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
+    private static final Logger log = LogManager.getLogger(JwtAuthenticationProvider.class);
     private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
@@ -27,12 +34,13 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
             String userId = jwtUtil.getUserIdFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(userId); // throws UsernameNotFoundException
-
+            Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
             return JwtAuthenticationToken.authenticated(
-                    userDetails,
-                    token,
-                    userDetails.getAuthorities());
+                userDetails,
+                token,
+                authorities);
         } catch (Exception e) { // JwtException을 AuthenticationException 으로 변환
+            log.info("JWT authentication failed: {}", e.getMessage());
             throw new BaseException(ErrorCode.JWT_AUTHENTICATION_FAIL);
         }
     }

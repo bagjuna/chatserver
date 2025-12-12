@@ -48,14 +48,22 @@ public class StompHandler implements ChannelInterceptor {
 	@Override
 	public Message<?> preSend(Message<?> message, MessageChannel channel) {
 		final StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+
 		String bearerToken = accessor.getFirstNativeHeader("Authorization");
+		if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+			throw new BaseException(ErrorCode.JWT_TOKEN_MISSING);
+		}
+
 		String token = bearerToken.substring(7);
+
+
 		try {
 			jwtUtil.validateToken(token);
 		} catch (Exception e) {
 			throw new BaseException(ErrorCode.JWT_AUTHENTICATION_FAIL);
 		}
-		if (StompCommand.CONNECT == accessor.getCommand()) {
+
+		if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 			System.out.println("connect 요청시 토큰 유효성 검증");
 			System.out.println("토큰 검증 완료");
 		}

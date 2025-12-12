@@ -78,8 +78,8 @@ public class ChatService {
         Member member = memberRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(
                 () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
         );
-        // 채팅방 생성
 
+        // 채팅방 생성
         ChatRoom chatRoom = ChatRoom.builder()
                 .name(roomName)
                 .isGroupChat("Y")
