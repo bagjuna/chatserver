@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.chatserver.AbstractIntegrationTest;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
+import com.example.chatserver.global.security.fixture.MemberFixture;
 import com.example.chatserver.global.security.jwt.JwtUtil;
 
 @SpringBootTest
@@ -38,7 +39,7 @@ class SpringSecurityControllerTest extends AbstractIntegrationTest {
 	@BeforeEach
 	void setUp() {
 		memberRepository.deleteAll();
-		testUser = Member.create("testUser", "test@email.com", "TEST");
+		testUser = MemberFixture.create("testUser", "test@email.com", "TEST");
 		memberRepository.save(testUser);
 	}
 
