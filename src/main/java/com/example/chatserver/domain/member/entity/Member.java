@@ -37,24 +37,4 @@ public class Member extends BaseTimeEntity {
 
 
 
-    /**
-     * 테스트용 User 객체를 생성
-     * @param memberId 테스트용 memberId
-     * @return memberId를 id로 갖는 빈 User
-     */
-    public static Member withId(Long memberId) {
-        return Member.builder()
-            .id(memberId)
-            .publicId("user_test_" + UUID.randomUUID())
-            .build();
-    }
-
-    public static Member create(String name, String email, String password) {
-        return Member.builder()
-            .name(name)
-            .email(email)
-            .password(password)
-            .publicId("member_" + UUID.randomUUID())
-            .build();
-    }
 }
