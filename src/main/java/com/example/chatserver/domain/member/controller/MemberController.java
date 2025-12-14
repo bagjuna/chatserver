@@ -4,15 +4,12 @@ import com.example.chatserver.domain.member.dto.response.LoginResponse;
 import com.example.chatserver.domain.member.dto.response.MemberListResponse;
 import com.example.chatserver.domain.member.dto.request.LoginRequest;
 import com.example.chatserver.domain.member.dto.request.SignupRequest;
-import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.service.MemberService;
 import com.example.chatserver.global.common.error.BaseException;
 import com.example.chatserver.global.common.error.ErrorCode;
 import com.example.chatserver.global.security.userdetails.CustomUserDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 

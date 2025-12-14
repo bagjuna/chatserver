@@ -55,7 +55,7 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/api/error",
 					"/api/auth/**",
-					"/api/test/anonymous",
+					"/test/anonymous",
 					"/api/actuator/health",
 					"/ws-test/**"
 				).permitAll()

@@ -1,0 +1,29 @@
+spring:
+  config:
+    activate:
+      on-profile: test # test 프로필일 때만 동작
+
+  # DB 접속 정보는 AbstractIntegrationTest가 주입하므로 여기엔 없어도 됨!
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop # 테스트 시작 시 테이블 생성 -> 종료 시 삭제 (매우 중요)
+    show-sql: true # 쿼리 나가는 거 눈으로 확인용
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: "" # 비밀번호 비워둠
+
+  # 커스텀 변수 (에러가 난 부분)
+  redisPassword: ""
+
+jwt:
+  secretKey: "test_secret_key_test_secret_key_test_secret_key"
+  expiration: 86400 # 24 hours

@@ -39,6 +39,12 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return member.getEmail();
+        return member.getPublicId();
     }
+
+    public Member getMember() {
+        return this.member;
+    }
+
+
 }

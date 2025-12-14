@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
-    List<ChatRoom> findByIsGroupChat(String isGroupChat);
+    List<ChatRoom> findByIsGroupChat(Boolean isGroupChat);
 }

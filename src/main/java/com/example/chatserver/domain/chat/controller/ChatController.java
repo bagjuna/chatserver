@@ -3,6 +3,7 @@ package com.example.chatserver.domain.chat.controller;
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
 import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
 import com.example.chatserver.domain.chat.dto.MyChatListResDto;
+import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
 import com.example.chatserver.domain.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,19 +21,6 @@ public class ChatController {
         this.chatService = chatService;
     }
 
-    // 그룹 채팅방 개설
-    @PostMapping("/room/group/create")
-    public ResponseEntity<?> createGroupChatRoom(@RequestParam String roomName) {
-        chatService.createGroupRoom(roomName);
-        return ResponseEntity.ok().build();
-    }
-
-    // 그룹채팅목록조회
-    @GetMapping("/room/group/list")
-    public ResponseEntity<?> getGroupChatRoomList() {
-        List<ChatRoomListResDto> chatRooms = chatService.getGroupChatRooms();
-        return new ResponseEntity<>(chatRooms, HttpStatus.OK);
-    }
 
     // 그룹채팅방 참여
     @PostMapping("/room/group/{roomId}/join")
@@ -55,26 +43,5 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
-    // 내 채팅방 목록 조회 : roomId, roomName, 그룹채팅여부, 메시지읽음개수
-    @GetMapping("/my/rooms")
-    public ResponseEntity<?> getMyChatRoomList() {
-        List<MyChatListResDto> myChatRoomList = chatService.getMyChatRooms();
-        return new ResponseEntity<>(myChatRoomList, HttpStatus.OK);
-    }
 
-
-    // 채팅방 나가기
-    @DeleteMapping("/room/group/{roomId}/leave")
-    public ResponseEntity<?> leaveGroupChatRoom(@PathVariable String roomId) {
-        chatService.leaveGroupChatRoom(roomId);
-        return ResponseEntity.ok().build();
-    }
-
-
-    // 개인 채팅방 개설 또는 roomId return
-    @PostMapping("/room/private/create")
-    public ResponseEntity<?> createPrivateChatRoom(@RequestParam Long otherMemberId) {
-        Long roomId = chatService.getOrCreatePrivateRoom(otherMemberId);
-        return new ResponseEntity<>(roomId, HttpStatus.OK);
-    }
 }
