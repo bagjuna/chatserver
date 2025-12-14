@@ -27,4 +27,7 @@ public class ChatParticipant extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
+
+    @Enumerated(EnumType.STRING)
+    private RoomRole roomRole;
 }

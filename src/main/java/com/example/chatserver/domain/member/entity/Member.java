@@ -19,8 +19,10 @@ public class Member extends BaseTimeEntity {
     private Long id;
 
     private String name;
+
     @Column(nullable = false, unique = true)
     private String email;
+
     @Column(nullable = false, length = 100)
     private String password;
 
@@ -47,4 +49,12 @@ public class Member extends BaseTimeEntity {
             .build();
     }
 
+    public static Member create(String name, String email, String password) {
+        return Member.builder()
+            .name(name)
+            .email(email)
+            .password(password)
+            .publicId("member_" + UUID.randomUUID())
+            .build();
+    }
 }

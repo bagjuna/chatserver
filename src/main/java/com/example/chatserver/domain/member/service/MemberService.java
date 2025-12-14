@@ -9,7 +9,6 @@ import com.example.chatserver.domain.member.entity.Role;
 import com.example.chatserver.domain.member.exception.AlreadyExistEmailException;
 import com.example.chatserver.domain.member.exception.PasswordIncorrectException;
 import com.example.chatserver.domain.member.repository.MemberRepository;
-import com.example.chatserver.global.common.BaseResponse.ErrorResponse;
 import com.example.chatserver.global.common.error.BaseException;
 import com.example.chatserver.global.common.error.ErrorCode;
 import com.example.chatserver.global.security.jwt.JwtUtil;
@@ -65,8 +64,8 @@ public class MemberService {
 	}
 
 	public ResponseEntity<LoginResponse> login(LoginRequest loginRequest) {
-		Member member = memberRepository.findByEmail(loginRequest.getEmail()).orElseThrow(
-			AlreadyExistEmailException::new);
+		Member member = memberRepository.findByEmail(loginRequest.getEmail())
+			.orElseThrow(() -> new BaseException(ErrorCode.MEMBER_NOT_FOUND));
 
 		if (!passwordEncoder.matches(loginRequest.getPassword(), member.getPassword())) {
 			throw new PasswordIncorrectException();
@@ -87,11 +86,11 @@ public class MemberService {
 		String accessToken = jwtUtil.createAccessToken(member.getPublicId());
 		String refreshToken = jwtUtil.createRefreshToken(member.getPublicId());
 		// Redis에 Refresh Token 저장
-		// Key: "RT:1", Value: "eyJ...", Duration: 30일 (JwtUtil 설정을 따름)
+		// Key: "RT:1", Value: "eyJ...", Duration: 30일
 		redisTemplate.opsForValue().set(
 			"RT:" + member.getPublicId(),
 			refreshToken,
-			jwtUtil.getRefreshTokenMaxAgeInSeconds(), // 예: 1209600 (14일)
+			jwtUtil.getRefreshTokenMaxAgeInSeconds(), //  2592000초 (30일)
 			java.util.concurrent.TimeUnit.SECONDS
 		);
 
