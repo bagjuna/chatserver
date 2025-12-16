@@ -2,9 +2,6 @@ package com.example.chatserver.domain.chat.controller;
 
 import java.util.List;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -46,6 +43,14 @@ public class ChatRoomController {
 		return ResponseEntity.ok().body(groupRoomId);
 	}
 
+	// 내 채팅방 목록 조회 : roomId, roomName, 그룹채팅여부, 메시지읽음개수
+	@GetMapping("/my/rooms")
+	public ResponseEntity<?> getMyChatRoomList(@AuthenticationPrincipal CustomUserDetails userDetails) {
+		Member member = userDetails.getMember();
+		List<MyChatListResDto> myChatRoomList = chatRoomService.getMyChatRooms(member);
+		return new ResponseEntity<>(myChatRoomList, HttpStatus.OK);
+	}
+
 	// 그룹채팅목록조회
 	@GetMapping("/group/list")
 	public ResponseEntity<PageResponseDTO<ChatRoomListResDto>> getGroupChatRoomList(
@@ -58,13 +63,7 @@ public class ChatRoomController {
 	}
 
 
-	// 내 채팅방 목록 조회 : roomId, roomName, 그룹채팅여부, 메시지읽음개수
-	@GetMapping("/my/rooms")
-	public ResponseEntity<?> getMyChatRoomList(@AuthenticationPrincipal CustomUserDetails userDetails) {
-		List<MyChatListResDto> myChatRoomList = chatRoomService.getMyChatRooms(
-			);
-		return new ResponseEntity<>(myChatRoomList, HttpStatus.OK);
-	}
+
 
 
 	// 채팅방 나가기

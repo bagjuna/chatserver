@@ -1,9 +1,6 @@
 package com.example.chatserver.domain.chat.controller;
 
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
-import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
-import com.example.chatserver.domain.chat.dto.MyChatListResDto;
-import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
 import com.example.chatserver.domain.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

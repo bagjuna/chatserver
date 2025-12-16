@@ -56,6 +56,10 @@ public class ChatRoom extends BaseTimeEntity {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<ChatMessage> chatMessages = new ArrayList<>();
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "last_message_id")
+    private ChatMessage lastMessage;
+
     @Builder
     private ChatRoom(String name, boolean isGroupChat, boolean isSecret, String password) {
         this.name = name;

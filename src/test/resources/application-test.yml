@@ -21,7 +21,7 @@ spring:
       port: 6379
       password: "" # 비밀번호 비워둠
 
-  # 커스텀 변수 (에러가 난 부분)
+  # 커스텀 변수
   redisPassword: ""
 
 jwt:

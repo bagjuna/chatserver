@@ -41,10 +41,10 @@ public class StompController {
         chatService.saveMessage(roomId, chatMessageDto);
         chatMessageDto.setRoomId(roomId);
 
-        // messageTemplate.convertAndSend("/topic/" + roomId, chatMessageDto);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String message = objectMapper.writeValueAsString(chatMessageDto);
-        pubSubService.publish("chat", message);
+        messageTemplate.convertAndSend("/topic/" + roomId, chatMessageDto);
+        // ObjectMapper objectMapper = new ObjectMapper();
+        // String message = objectMapper.writeValueAsString(chatMessageDto);
+        // pubSubService.publish("chat", message);
     }
 
 
