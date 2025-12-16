@@ -8,9 +8,7 @@ spring:
     url: jdbc:mysql://localhost:3306/chat_db?useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: ${dbPassword}
-#    url: jdbc:mysql://database-1.czyawm6ocm1f.ap-northeast-2.rds.amazonaws.com:3306/chat_db?useSSL=false&allowPublicKeyRetrieval=true
-#    username: admin
-#    password: password
+
   jpa:
     database: mysql
     # InnoDB

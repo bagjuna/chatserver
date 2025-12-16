@@ -17,6 +17,7 @@ import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
 import com.example.chatserver.domain.chat.dto.MyChatListResDto;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomCreate;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
+import com.example.chatserver.domain.chat.entity.ChatMessage;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
 import com.example.chatserver.domain.chat.entity.RoomRole;
@@ -85,27 +86,38 @@ public class ChatRoomService {
 		return chatRoom.getRoomId();
 	}
 
-
 	/**
 	 * 내 채팅방 목록 조회
+	 *
 	 * @return List<MyChatListResDto>
 	 */
-	public List<MyChatListResDto> getMyChatRooms() {
-		Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(
-			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
-		);
+	public List<MyChatListResDto> getMyChatRooms(Member member) {
 
+		// 1. member로 내가 참여한 chatParticipant 조회
 		List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByMember(member);
 
+		// 2. 각 채팅방별로 읽지 않은 메시지 개수 조회 및 DTO 변환
 		List<MyChatListResDto> chatListResDtos = new ArrayList<>();
 
 		for (ChatParticipant c : chatParticipants) {
-			Long count  = readStatusRepository.countByChatRoomAndMemberAndIsReadFalse(c.getChatRoom(), member);
+			Long count = readStatusRepository.countByChatRoomAndMemberAndIsReadFalse(c.getChatRoom(), member);
+			int size = c.getChatRoom().getChatMessages().size();
+			ChatMessage lastMessage = null;
+			if(size > 0) {
+				lastMessage = c.getChatRoom().getChatMessages().get(size - 1);
+
+			}
 			MyChatListResDto dto = MyChatListResDto.builder()
 				.roomId(c.getChatRoom().getRoomId())
 				.roomName(c.getChatRoom().getName())
 				.isGroupChat(c.getChatRoom().isGroupChat())
 				.unReadCount(count)
+				.lastMessage(
+					size == 0 ? null : lastMessage.getContent()
+				)
+				.lastMessageTime(
+					size == 0 ? null : lastMessage.getCreatedTime()
+				)
 				.build();
 			chatListResDtos.add(dto);
 		}
