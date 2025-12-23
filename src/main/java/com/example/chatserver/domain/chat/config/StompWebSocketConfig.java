@@ -21,7 +21,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // 1. 클라이언트에서 웹소켓으로 접속하는 엔드포인트 설정
         //    /ws로 연결 요청이 들어오면, 이 endpoint로 연결됨
-        registry.addEndpoint("/connect")
+        registry.addEndpoint("/api/connect")
                 // cors 설정
                 .setAllowedOrigins("http://localhost:5173")
                 // ws://가 아닌 http://로 연결 요청이 들어올 경우, SockJS를 사용하여 연결
