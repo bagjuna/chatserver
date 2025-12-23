@@ -60,8 +60,8 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("채팅방 생성 테스트")
-	void createChatRoomTest() {
+	@DisplayName("공개 채팅방 생성 테스트")
+	void create_chatRoom_test() {
 		ChatRoomCreate chatRoomCreate = ChatRoomCreate.builder()
 			.roomName("Test Room")
 			.isSecretChat(false)
@@ -69,6 +69,35 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 		String groupRoomId = chatRoomService.createGroupRoom(chatRoomCreate, testUser);
 		assertEquals(1, chatRoomRepository.count());
 		assertEquals(1, chatParticipantRepository.count());
+
+	}
+
+	@Test
+	@DisplayName("비밀 채팅방 생성 테스트")
+	void create_secret_chatRoom_test() {
+		ChatRoomCreate chatRoomCreate = ChatRoomCreate.builder()
+			.roomName("Secret Room")
+			.isSecretChat(true)
+			.password("secret123")
+			.build();
+		String groupRoomId = chatRoomService.createGroupRoom(chatRoomCreate, testUser);
+		assertEquals(1, chatRoomRepository.count());
+		assertEquals(1, chatParticipantRepository.count());
+
+	}
+
+	@Test
+	@DisplayName("내 채팅방 목록 조회")
+	void get_my_chatRoom_list_test() {
+		ChatRoomCreate chatRoomCreate = ChatRoomCreate.builder()
+			.roomName("Test Room")
+			.isSecretChat(false)
+			.build();
+		chatRoomService.createGroupRoom(chatRoomCreate, testUser);
+
+		var myChatRooms = chatRoomService.getMyChatRooms(testUser);
+		assertEquals(1, myChatRooms.size());
+		assertEquals("Test Room", myChatRooms.get(0).getRoomName());
 
 	}
 

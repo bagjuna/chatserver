@@ -119,7 +119,7 @@ public class ChatService {
     public List<ChatMessageDto> getChatHistory(String roomId) {
         // 내가 해당 채팅방의 참여자가 아닐 경우 에러
         // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findById(Long.parseLong(roomId)).orElseThrow(
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
                 () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
         );
         // 참여자 조회
