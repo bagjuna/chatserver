@@ -36,7 +36,7 @@ public class StompController {
 //
     // 방법 2: MessageMapping 어노테이션만 활용
     @MessageMapping("/{roomId}")
-    public void sendMessage(@DestinationVariable Long roomId, ChatMessageDto chatMessageDto) throws JsonProcessingException {
+    public void sendMessage(@DestinationVariable String roomId, ChatMessageDto chatMessageDto) throws JsonProcessingException {
         System.out.println(chatMessageDto.getMessage());
         chatService.saveMessage(roomId, chatMessageDto);
         chatMessageDto.setRoomId(roomId);

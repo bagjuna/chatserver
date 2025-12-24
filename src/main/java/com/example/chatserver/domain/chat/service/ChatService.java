@@ -48,9 +48,9 @@ public class ChatService {
     }
 
 
-    public void saveMessage(Long roomId, ChatMessageDto chatMessageDto) {
+    public void saveMessage(String roomId, ChatMessageDto chatMessageDto) {
         // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
                 () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
         );
         // 보낸 사람 조회
@@ -85,11 +85,11 @@ public class ChatService {
 
     public void addParticipantToGroupChat(String roomId) {
         // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findById(Long.parseLong(roomId)).orElseThrow(
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
                 () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
         );
         // member 조회
-        Member member = memberRepository.findByEmail(SecurityContextHolder.getContext()
+        Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext()
                 .getAuthentication().getName()).orElseThrow(
                 () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
         );
@@ -123,7 +123,7 @@ public class ChatService {
                 () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
         );
         // 참여자 조회
-        Member member = memberRepository.findByEmail(SecurityContextHolder.getContext()
+        Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext()
                 .getAuthentication().getName()).orElseThrow(
                 () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
         );
@@ -144,6 +144,7 @@ public class ChatService {
             ChatMessageDto chatMessageDto = ChatMessageDto.builder()
                     .message(c.getContent())
                     .senderEmail(c.getMember().getEmail())
+                    .createdAt(c.getCreatedTime())
                     .build();
             chatMessageDtos.add(chatMessageDto);
         }
@@ -153,9 +154,9 @@ public class ChatService {
 
     }
 
-    public boolean isRoomParticipant(String email, Long roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
-        Member member = memberRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+    public boolean isRoomParticipant(String publicId, String roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
+        Member member = memberRepository.findByPublicId(publicId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
         List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
         for (ChatParticipant c : chatParticipants) {
@@ -167,9 +168,9 @@ public class ChatService {
     }
 
 
-    public void messageRead(Long roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findById(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
-        Member member = memberRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+    public void messageRead(String roomId) {
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
+        Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
         List<ReadStatus> readStatuses = readStatusRepository.findByChatRoomAndMember(chatRoom, member);
         for(ReadStatus r : readStatuses) {
             r.updateIsRead(true);

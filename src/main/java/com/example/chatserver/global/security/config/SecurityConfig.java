@@ -57,7 +57,10 @@ public class SecurityConfig {
 					"/api/auth/**",
 					"/test/anonymous",
 					"/api/actuator/health",
-					"/ws-test/**"
+					"/ws-test/**",
+					"/api/connect/**"
+					// "/publish/**",
+					// "/topic/**"
 				).permitAll()
 				.anyRequest().authenticated()
 			)
