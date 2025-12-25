@@ -3,8 +3,10 @@ package com.example.chatserver.domain.chat.service;
 import static com.example.chatserver.domain.chat.entity.QChatRoom.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -103,7 +105,7 @@ public class ChatRoomService {
 			Long count = readStatusRepository.countByChatRoomAndMemberAndIsReadFalse(c.getChatRoom(), member);
 			int size = c.getChatRoom().getChatMessages().size();
 			ChatMessage lastMessage = null;
-			if(size > 0) {
+			if (size > 0) {
 				lastMessage = c.getChatRoom().getChatMessages().get(size - 1);
 
 			}
@@ -122,16 +124,30 @@ public class ChatRoomService {
 			chatListResDtos.add(dto);
 		}
 
-		return chatListResDtos;
+		return chatListResDtos.stream().sorted(
+			(o1, o2) -> {
+				if (o1.getUnReadCount() != o2.getUnReadCount()) {
+					return o2.getUnReadCount().compareTo(o1.getUnReadCount());
+				}
+				else {
+					return o2.getLastMessageTime().compareTo(o1.getLastMessageTime());
+
+				}
+
+			}
+		).collect(Collectors.toList());
 	}
 
 	public void leaveGroupChatRoom(String roomId) {
-		ChatRoom chatRoom = chatRoomRepository.findById(Long.parseLong(roomId)).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
-		Member member = memberRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+		ChatRoom chatRoom = chatRoomRepository.findById(Long.parseLong(roomId))
+			.orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
+		Member member = memberRepository.findByEmail(SecurityContextHolder.getContext().getAuthentication().getName())
+			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 		if (!chatRoom.isGroupChat()) {
 			throw new IllegalArgumentException("단체 채팅방이 아닙니다.");
 		}
-		ChatParticipant c = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member).orElseThrow(() -> new EntityNotFoundException("참여방을 찾을 수 없습니다."));
+		ChatParticipant c = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member)
+			.orElseThrow(() -> new EntityNotFoundException("참여방을 찾을 수 없습니다."));
 		chatParticipantRepository.delete(c);
 
 		List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
@@ -142,7 +158,8 @@ public class ChatRoomService {
 	}
 
 	public Long getOrCreatePrivateRoom(String otherMemberId) {
-		Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(
+		Member member = memberRepository.findByPublicId(
+			SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(
 			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
 		);
 
@@ -150,8 +167,9 @@ public class ChatRoomService {
 			() -> new EntityNotFoundException("상대방을 찾을 수 없습니다.")
 		);
 
-		Optional<ChatRoom> chatRoom = chatParticipantRepository.findChatRoomIdExistingPrivateRoom(member.getId(), otherMember.getId());
-		if(chatRoom.isPresent()) {
+		Optional<ChatRoom> chatRoom = chatParticipantRepository.findChatRoomIdExistingPrivateRoom(member.getId(),
+			otherMember.getId());
+		if (chatRoom.isPresent()) {
 			// 이미 존재하는 개인 채팅방이 있다면
 			return chatRoom.get().getId();
 		}
@@ -190,13 +208,11 @@ public class ChatRoomService {
 
 		// 이미 참여자인지 검증
 		Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
-		if(!participant.isPresent()){
+		if (!participant.isPresent()) {
 			addParticipantMember(chatRoom, member);
 		}
 
-
 	}
-
 
 	// chatRoom에 참여자 추가 (일반 멤버MEMBER)
 	public void addParticipantMember(ChatRoom chatRoom, Member member) {
@@ -229,7 +245,6 @@ public class ChatRoomService {
 		ChatRoomSearch chatRoomSearch,
 		PageRequestDTO pageRequestDTO) {
 
-
 		Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1, pageRequestDTO.getSize());
 
 		List<ChatRoomListResDto> content = queryFactory
@@ -251,7 +266,6 @@ public class ChatRoomService {
 			.orderBy(chatRoom.updatedTime.desc()) // 5. 정렬: 생성일자 내림차순
 			// 6. 최종 조회
 			.fetch();
-
 
 		// 3. 카운트 조회 (fetchCount 대신 select(chatRoom.count()) 사용)
 		// 리스트 쿼리에는 정렬(orderBy)이 필요하지만, 카운트 쿼리에는 필요 없어서 성능상 이득입니다.
@@ -279,18 +293,19 @@ public class ChatRoomService {
 		// return dtos;
 	}
 
-
 	private BooleanExpression isGroupChatEq(boolean isGroupChat) {
 		return chatRoom.isGroupChat.eq(isGroupChat);
 	}
 
 	private BooleanExpression eqIsGroupChat(Boolean isGroupChat) {
-		if (isGroupChat == null) return null;
+		if (isGroupChat == null)
+			return null;
 		return chatRoom.isGroupChat.eq(isGroupChat);
 	}
 
 	private BooleanExpression eqIsSecret(Boolean isSecret) {
-		if (isSecret == null) return null;
+		if (isSecret == null)
+			return null;
 		return chatRoom.isSecret.eq(isSecret);
 	}
 

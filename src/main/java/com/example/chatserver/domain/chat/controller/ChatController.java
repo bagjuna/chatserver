@@ -36,7 +36,7 @@ public class ChatController {
     // 채팅메시지 읽음처리
     @PostMapping("/room/{roomId}/read")
     public ResponseEntity<?> readChatMessage(@PathVariable String roomId) {
-        chatService.messageRead(Long.parseLong(roomId));
+        chatService.messageRead(roomId);
         return ResponseEntity.ok().build();
     }
 
