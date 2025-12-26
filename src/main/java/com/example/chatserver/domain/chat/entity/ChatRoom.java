@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +19,9 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Table(name = "chat_room", indexes = {
+    @Index(name = "idx_chat_room_uuid", columnList = "room_id") // roomId 에 유니크 인덱스 생성
+})
 public class ChatRoom extends BaseTimeEntity {
 
     @Id
@@ -56,9 +60,19 @@ public class ChatRoom extends BaseTimeEntity {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<ChatMessage> chatMessages = new ArrayList<>();
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_message_id")
-    private ChatMessage lastMessage;
+    private Long lastMessageId;
+    private String lastMessageContent;
+    private LocalDateTime lastMessageTime;
+
+    // 메시지 보낼 때마다 이 메서드 호출해서 갱신
+    public void updateLastMessage(ChatMessage chatMessage) {
+        this.lastMessageId = chatMessage.getId();
+        this.lastMessageContent = chatMessage.getContent();
+        this.lastMessageTime = chatMessage.getCreatedTime();
+    }
+
+
+
 
     @Builder
     private ChatRoom(String name, boolean isGroupChat, boolean isSecret, String password) {

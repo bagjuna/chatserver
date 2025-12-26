@@ -1,18 +1,13 @@
 package com.example.chatserver.domain.chat.service;
 
-import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
 import com.example.chatserver.domain.chat.entity.ChatMessage;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
-import com.example.chatserver.domain.chat.entity.QChatRoom;
-import com.example.chatserver.domain.chat.entity.ReadStatus;
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
-import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
-import com.example.chatserver.domain.chat.dto.MyChatListResDto;
+import com.example.chatserver.domain.chat.entity.RoomRole;
 import com.example.chatserver.domain.chat.repository.ChatMessageRepository;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
-import com.example.chatserver.domain.chat.repository.ReadStatusRepository;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -34,17 +29,18 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatParticipantRepository chatParticipantRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final ReadStatusRepository readStatusRepository;
     private final MemberRepository memberRepository;
     private final JPAQueryFactory queryFactory;
+    private final ChatParticipantService chatParticipantService;
 
-    public ChatService(ChatRoomRepository chatRoomRepository, ChatParticipantRepository chatParticipantRepository, ChatMessageRepository chatMessageRepository, ReadStatusRepository readStatusRepository, MemberRepository memberRepository, JPAQueryFactory queryFactory) {
+    public ChatService(ChatRoomRepository chatRoomRepository, ChatParticipantRepository chatParticipantRepository, ChatMessageRepository chatMessageRepository, MemberRepository memberRepository, JPAQueryFactory queryFactory,
+        ChatParticipantService chatParticipantService) {
         this.chatRoomRepository = chatRoomRepository;
         this.chatParticipantRepository = chatParticipantRepository;
         this.chatMessageRepository = chatMessageRepository;
-        this.readStatusRepository = readStatusRepository;
         this.memberRepository = memberRepository;
         this.queryFactory = queryFactory;
+        this.chatParticipantService = chatParticipantService;
     }
 
 
@@ -63,21 +59,12 @@ public class ChatService {
                 .member(sender)
                 .content(chatMessageDto.getMessage())
                 .build();
-        chatMessageRepository.save(chatMessage);
-        // 사용자별로 읽음 상태 저장
-        List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
-        for (ChatParticipant c : chatParticipants) {
-            ReadStatus readStatus = ReadStatus.builder()
-                    .chatRoom(c.getChatRoom())
-                    .member(c.getMember())
-                    .chatMessage(chatMessage)
-                    .isRead(c.getMember().equals(sender))
-                    .build();
-            readStatusRepository.save(readStatus);
-        }
+        ChatMessage newChatMessage = chatMessageRepository.save(chatMessage);
 
+        chatRoom.updateLastMessage(newChatMessage);
 
-
+        // Fetch Join으로 방 정보까지 한 번에 가져옴
+        updateReadStatus(roomId, sender.getPublicId());
     }
 
 
@@ -112,6 +99,7 @@ public class ChatService {
         ChatParticipant chatParticipant = ChatParticipant.builder()
                 .chatRoom(chatRoom)
                 .member(member)
+                .roomRole(RoomRole.NORMAL)
                 .build();
         chatParticipantRepository.save(chatParticipant);
     }
@@ -169,16 +157,24 @@ public class ChatService {
 
 
     public void messageRead(String roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
-        Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
-        List<ReadStatus> readStatuses = readStatusRepository.findByChatRoomAndMember(chatRoom, member);
-        for(ReadStatus r : readStatuses) {
-            r.updateIsRead(true);
-        }
+        String publicId = SecurityContextHolder.getContext().getAuthentication().getName();
+        updateReadStatus(roomId, publicId);
     }
 
+    private void updateReadStatus(String roomId, String publicId) {
+        // Fetch Join으로 방 정보까지 한 번에 가져옴
+        ChatParticipant participant = chatParticipantRepository.findByRoomIdAndMemberPublicId
+				(roomId, publicId)
+            .orElseThrow(
+                () -> new EntityNotFoundException("참여방을 찾을 수 없습니다.")
+            );
 
+        // [최고 성능] ChatMessage 테이블 조회 없이(쿼리 0회), ChatRoom에 캐싱된 ID 사용
+        Long latestId = participant.getChatRoom().getLastMessageId();
 
-
+        if (latestId != null && (participant.getLastReadMessageId() == null || participant.getLastReadMessageId() < latestId)) {
+            participant.updateLastReadMessage(latestId);
+        }
+    }
 
 }

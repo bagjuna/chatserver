@@ -19,13 +19,11 @@ import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
 import com.example.chatserver.domain.chat.dto.MyChatListResDto;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomCreate;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
-import com.example.chatserver.domain.chat.entity.ChatMessage;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
-import com.example.chatserver.domain.chat.entity.RoomRole;
+import com.example.chatserver.domain.chat.repository.ChatMessageRepository;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
-import com.example.chatserver.domain.chat.repository.ReadStatusRepository;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.example.chatserver.global.common.paging.PageRequestDTO;
@@ -45,7 +43,8 @@ public class ChatRoomService {
 	private final MemberRepository memberRepository;
 	private final ChatRoomRepository chatRoomRepository;
 	private final ChatParticipantRepository chatParticipantRepository;
-	private final ReadStatusRepository readStatusRepository;
+	private final ChatParticipantService chatParticipantService;
+	private final ChatMessageRepository chatMessageRepository;
 	private final JPAQueryFactory queryFactory;
 
 	public String createGroupRoom(ChatRoomCreate chatRoomCreate, Member member) {
@@ -84,7 +83,7 @@ public class ChatRoomService {
 		// 	.build();
 		//
 		// chatParticipantRepository.save(chatParticipant);
-		addParticipantManager(chatRoom, member);
+		chatParticipantService.addParticipantManager(chatRoom, member);
 		return chatRoom.getRoomId();
 	}
 
@@ -96,29 +95,27 @@ public class ChatRoomService {
 	public List<MyChatListResDto> getMyChatRooms(Member member) {
 
 		// 1. member로 내가 참여한 chatParticipant 조회
-		List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByMember(member);
+		List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByMemberWithRoom(member);
 
 		// 2. 각 채팅방별로 읽지 않은 메시지 개수 조회 및 DTO 변환
 		List<MyChatListResDto> chatListResDtos = new ArrayList<>();
 
 		for (ChatParticipant c : chatParticipants) {
-			Long count = readStatusRepository.countByChatRoomAndMemberAndIsReadFalse(c.getChatRoom(), member);
-			int size = c.getChatRoom().getChatMessages().size();
-			ChatMessage lastMessage = null;
-			if (size > 0) {
-				lastMessage = c.getChatRoom().getChatMessages().get(size - 1);
-
-			}
+			// Long count = readStatusRepository.countByChatRoomAndMemberAndIsReadFalse(c.getChatRoom(), member);
+			long unreadCount = chatMessageRepository.countByRoomIdAndIdGreaterThan(
+				c.getChatRoom(),
+				c.getLastReadMessageId() == null ? 0L : c.getLastReadMessageId()
+			);
 			MyChatListResDto dto = MyChatListResDto.builder()
 				.roomId(c.getChatRoom().getRoomId())
 				.roomName(c.getChatRoom().getName())
 				.isGroupChat(c.getChatRoom().isGroupChat())
-				.unReadCount(count)
+				.unReadCount(unreadCount)
 				.lastMessage(
-					size == 0 ? null : lastMessage.getContent()
+					c.getChatRoom().getLastMessageContent()
 				)
 				.lastMessageTime(
-					size == 0 ? null : lastMessage.getCreatedTime()
+					c.getChatRoom().getLastMessageTime()
 				)
 				.build();
 			chatListResDtos.add(dto);
@@ -157,7 +154,7 @@ public class ChatRoomService {
 
 	}
 
-	public Long getOrCreatePrivateRoom(String otherMemberId) {
+	public String getOrCreatePrivateRoom(String otherMemberId) {
 		Member member = memberRepository.findByPublicId(
 			SecurityContextHolder.getContext().getAuthentication().getName()).orElseThrow(
 			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
@@ -171,13 +168,12 @@ public class ChatRoomService {
 			otherMember.getId());
 		if (chatRoom.isPresent()) {
 			// 이미 존재하는 개인 채팅방이 있다면
-			return chatRoom.get().getId();
+			return chatRoom.get().getRoomId();
 		}
 		// 만약 1:1 개인 채팅방이 없다면 기존 채팅방을 생성
 		ChatRoom newRoom = ChatRoom.builder()
 			.isGroupChat(false)
 			.name(member.getName() + "-" + otherMember.getName())
-			.isGroupChat(false)
 			.isSecret(false)
 			.password(null)
 			.build();
@@ -185,10 +181,10 @@ public class ChatRoomService {
 		chatRoomRepository.save(newRoom);
 
 		// 두사람 모두 참여자로 새롭게 추가
-		addParticipantManager(newRoom, member);
-		addParticipantMember(newRoom, otherMember);
+		chatParticipantService.addParticipantManager(newRoom, member);
+		chatParticipantService.addParticipantMember(newRoom, otherMember);
 
-		return newRoom.getId();
+		return newRoom.getRoomId();
 	}
 
 	public void addParticipantToGroupChat(String roomId) {
@@ -209,31 +205,11 @@ public class ChatRoomService {
 		// 이미 참여자인지 검증
 		Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
 		if (!participant.isPresent()) {
-			addParticipantMember(chatRoom, member);
+			chatParticipantService.addParticipantMember(chatRoom, member);
 		}
 
 	}
 
-	// chatRoom에 참여자 추가 (일반 멤버MEMBER)
-	public void addParticipantMember(ChatRoom chatRoom, Member member) {
-		ChatParticipant chatParticipant = ChatParticipant.builder()
-			.chatRoom(chatRoom)
-			.member(member)
-			.roomRole(RoomRole.NORMAL)
-			.build();
-		chatParticipantRepository.save(chatParticipant);
-	}
-
-	// chatRoom에 참여자 추가 (매니저 역할)
-	public void addParticipantManager(ChatRoom chatRoom, Member member) {
-		ChatParticipant chatParticipant = ChatParticipant.builder()
-			.chatRoom(chatRoom)
-			.member(member)
-			.roomRole(RoomRole.MANAGER)
-			.build();
-		chatParticipantRepository.save(chatParticipant);
-
-	}
 
 	/**
 	 * 그룹 채팅방 목록 조회
@@ -251,8 +227,9 @@ public class ChatRoomService {
 			// 1. Projection: 엔티티 전체가 아니라 DTO에 필요한 필드만 조회 (성능 최적화)
 			.select(Projections.fields(ChatRoomListResDto.class,
 				chatRoom.id.as("roomId"),
-				chatRoom.name.as("roomName")
-
+				chatRoom.name.as("roomName"),
+				chatRoom.lastMessageTime.as("lastMessageTime"),
+				chatRoom.lastMessageContent.as("lastMessage")
 			))
 			.from(chatRoom)
 			.where(

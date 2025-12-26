@@ -44,8 +44,6 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 	@Autowired
 	private ChatParticipantRepository chatParticipantRepository;
 
-	@Autowired
-	private ReadStatusRepository readStatusRepository;
 
 	private Member testUser;
 
@@ -54,7 +52,6 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 		memberRepository.deleteAll();
 		chatRoomRepository.deleteAll();
 		chatParticipantRepository.deleteAll();
-		readStatusRepository.deleteAll();
 		testUser = MemberFixture.create("testUser", "test@email.com", "TEST");
 		memberRepository.save(testUser);
 	}

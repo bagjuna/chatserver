@@ -19,10 +19,18 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
 
     List<ChatParticipant> findAllByMember(Member member);
 
+    @Query("SELECT cp FROM ChatParticipant cp " +
+        "JOIN FETCH cp.chatRoom " +
+        "WHERE cp.member = :member")
+    List<ChatParticipant> findAllByMemberWithRoom(@Param("member") Member member);
+
     @Query("SELECT cp1.chatRoom FROM ChatParticipant cp1 JOIN ChatParticipant cp2 " +
             "ON cp1.chatRoom.id =cp2.chatRoom.id " +
             "WHERE cp1.member.id = :myId AND cp2.member.id = :otherMemberId " +
             "AND cp1.chatRoom.isGroupChat = false")
     Optional<ChatRoom> findChatRoomIdExistingPrivateRoom(@Param("myId") Long myId, @Param("otherMemberId") Long otherMemberId);
 
+    @Query("SELECT cp FROM ChatParticipant cp " +
+        "WHERE cp.chatRoom.roomId = :roomId AND cp.member.publicId = :publicId")
+    Optional<ChatParticipant> findByRoomIdAndMemberPublicId(String roomId, String publicId);
 }
