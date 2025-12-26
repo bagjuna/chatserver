@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class MyChatListResDto {
-    private String roomId;
-    private String roomName;
-    private boolean isGroupChat;
-    private Long unReadCount;
-    private String lastMessage;
-    private LocalDateTime lastMessageTime;
+    private String roomId;                  // 채팅방 ID
+    private String roomName;               // 채팅방 이름
+    private boolean isGroupChat;           // 그룹 채팅 여부
+    private Long unReadCount;              // 읽지 않은 메시지 수
+    private String lastMessage;            // 마지막 메시지 내용
+    private LocalDateTime lastMessageTime; // 마지막 메시지 시간
 }

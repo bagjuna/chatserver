@@ -15,7 +15,6 @@ import com.example.chatserver.AbstractIntegrationTest;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomCreate;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
-import com.example.chatserver.domain.chat.repository.ReadStatusRepository;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.example.chatserver.global.security.fixture.MemberFixture;
@@ -44,8 +43,6 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 	@Autowired
 	private ChatParticipantRepository chatParticipantRepository;
 
-	@Autowired
-	private ReadStatusRepository readStatusRepository;
 
 	private Member testUser;
 
@@ -54,7 +51,6 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 		memberRepository.deleteAll();
 		chatRoomRepository.deleteAll();
 		chatParticipantRepository.deleteAll();
-		readStatusRepository.deleteAll();
 		testUser = MemberFixture.create("testUser", "test@email.com", "TEST");
 		memberRepository.save(testUser);
 	}

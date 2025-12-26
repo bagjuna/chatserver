@@ -34,6 +34,7 @@ public class StompController {
 //        return message;
 //    }
 //
+
     // 방법 2: MessageMapping 어노테이션만 활용
     @MessageMapping("/{roomId}")
     public void sendMessage(@DestinationVariable String roomId, ChatMessageDto chatMessageDto) throws JsonProcessingException {
