@@ -30,11 +30,18 @@ public class ChatParticipant extends BaseTimeEntity {
     @JoinColumn(name = "chat_room_id", nullable = false)
     private ChatRoom chatRoom;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
     @Enumerated(EnumType.STRING)
     private RoomRole roomRole;
+
+    @Column(name = "last_read_message_id")
+    private Long lastReadMessageId;
+
+    public void updateLastReadMessage(Long id) {
+        this.lastReadMessageId = id;
+    }
+
 }
