@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 public class ChatParticipantService {
 
 	private final ChatParticipantRepository chatParticipantRepository;
-	private final ChatMessageRepository chatMessageRepository;
 
 	public void addParticipantMember(ChatRoom chatRoom, Member member) {
 		ChatParticipant chatParticipant = ChatParticipant.builder()
@@ -39,18 +38,6 @@ public class ChatParticipantService {
 			.roomRole(RoomRole.MANAGER)
 			.build();
 		chatParticipantRepository.save(chatParticipant);
-	}
-
-	public void updateLastRead(ChatRoom chatRoom, Member member) {
-
-
-		Optional<ChatMessage> lastMessageOption = chatMessageRepository.findTopByChatRoomOrderByIdDesc(
-			chatRoom);
-		if (lastMessageOption.isEmpty()) {
-			return;
-		}
-		ChatMessage chatMessage = lastMessageOption.get();
-
 	}
 
 }

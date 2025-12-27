@@ -10,9 +10,11 @@ import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
-import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.example.chatserver.global.common.error.BaseException;
+import com.example.chatserver.global.common.error.ErrorCode;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,24 +26,13 @@ import java.util.Optional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatParticipantRepository chatParticipantRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
-    private final JPAQueryFactory queryFactory;
-    private final ChatParticipantService chatParticipantService;
-
-    public ChatService(ChatRoomRepository chatRoomRepository, ChatParticipantRepository chatParticipantRepository, ChatMessageRepository chatMessageRepository, MemberRepository memberRepository, JPAQueryFactory queryFactory,
-        ChatParticipantService chatParticipantService) {
-        this.chatRoomRepository = chatRoomRepository;
-        this.chatParticipantRepository = chatParticipantRepository;
-        this.chatMessageRepository = chatMessageRepository;
-        this.memberRepository = memberRepository;
-        this.queryFactory = queryFactory;
-        this.chatParticipantService = chatParticipantService;
-    }
 
 
     public void saveMessage(String roomId, ChatMessageDto chatMessageDto) {
@@ -69,7 +60,6 @@ public class ChatService {
 
 
 
-
     public void addParticipantToGroupChat(String roomId) {
         // 채팅방 조회
         ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
@@ -91,6 +81,29 @@ public class ChatService {
             addParticipant(chatRoom, member);
         }
 
+
+    }
+
+    public void addParticipantToPrivateChat(String roomId, String password, String publicId) {
+        // 채팅방 조회
+        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+            () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+        );
+        // member 조회
+        Member member = memberRepository.findByPublicId(publicId).orElseThrow(
+            () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
+        );
+        if (!chatRoom.isSecret()) {
+            throw new IllegalArgumentException("비밀채팅방이 아닙니다.");
+        }
+        if (!chatRoom.getPassword().equals(password)) {
+            throw new BaseException(ErrorCode.CHAT_ROOM_PASSWORD_INCORRECT);
+        }
+        // 이미 참여자인지 검증
+        Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
+        if (participant.isEmpty()) {
+            addParticipant(chatRoom, member);
+        }
 
     }
 
@@ -176,5 +189,4 @@ public class ChatService {
             participant.updateLastReadMessage(latestId);
         }
     }
-
 }

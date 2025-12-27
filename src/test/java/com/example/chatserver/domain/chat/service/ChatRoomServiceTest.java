@@ -60,7 +60,7 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 	void create_chatRoom_test() {
 		ChatRoomCreate chatRoomCreate = ChatRoomCreate.builder()
 			.roomName("Test Room")
-			.isSecretChat(false)
+			.isSecret(false)
 			.build();
 		String groupRoomId = chatRoomService.createGroupRoom(chatRoomCreate, testUser);
 		assertEquals(1, chatRoomRepository.count());
@@ -73,7 +73,7 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 	void create_secret_chatRoom_test() {
 		ChatRoomCreate chatRoomCreate = ChatRoomCreate.builder()
 			.roomName("Secret Room")
-			.isSecretChat(true)
+			.isSecret(true)
 			.password("secret123")
 			.build();
 		String groupRoomId = chatRoomService.createGroupRoom(chatRoomCreate, testUser);
@@ -87,7 +87,7 @@ class ChatRoomServiceTest extends AbstractIntegrationTest {
 	void get_my_chatRoom_list_test() {
 		ChatRoomCreate chatRoomCreate = ChatRoomCreate.builder()
 			.roomName("Test Room")
-			.isSecretChat(false)
+			.isSecret(false)
 			.build();
 		chatRoomService.createGroupRoom(chatRoomCreate, testUser);
 

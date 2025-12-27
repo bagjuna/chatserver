@@ -1,4 +1,4 @@
-package com.example.chatserver.domain.chat.dto;
+package com.example.chatserver.domain.chat.dto.response;
 
 import java.time.LocalDateTime;
 
@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ChatRoomListResDto {
-    private Long roomId;
+    private String roomId;
     private String roomName;
     private LocalDateTime lastMessageTime;
-    private String lastMessage;
-
+    private Boolean isSecret;
+    private Boolean isParticipated;
 
 }

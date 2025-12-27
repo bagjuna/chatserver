@@ -2,8 +2,8 @@ package com.example.chatserver.domain.chat.service;
 
 import static com.example.chatserver.domain.chat.entity.QChatRoom.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,12 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
-import com.example.chatserver.domain.chat.dto.MyChatListResDto;
+import com.example.chatserver.domain.chat.dto.response.ChatRoomListResDto;
+import com.example.chatserver.domain.chat.dto.response.MyChatListResDto;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomCreate;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
+import com.example.chatserver.domain.chat.entity.QChatParticipant;
 import com.example.chatserver.domain.chat.repository.ChatMessageRepository;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
@@ -28,8 +29,10 @@ import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.example.chatserver.global.common.paging.PageRequestDTO;
 import com.example.chatserver.global.common.paging.PageResponseDTO;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -49,40 +52,27 @@ public class ChatRoomService {
 
 	public String createGroupRoom(ChatRoomCreate chatRoomCreate, Member member) {
 
-		// member 조회
-		// String publicId = SecurityContextHolder.getContext().getAuthentication().getName();
-		//
-		// Member member = memberRepository.findByPublicId(publicId)
-		// 	.orElseThrow(
-		// 		() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
-		// 	);
-
 		// 채팅방 생성
 		ChatRoom chatRoom = null;
-		if (chatRoomCreate.getIsSecretChat()) {
+		if (chatRoomCreate.isSecret()) {
 			chatRoom = ChatRoom.builder()
 				.name(chatRoomCreate.getRoomName())
+				.ownerId(member.getId())
 				.isSecret(true)
 				.password(chatRoomCreate.getPassword())
 				.isGroupChat(true)
+				.maxParticipants(chatRoomCreate.getMaxParticipantCnt())
 				.build();
 		} else {
 			chatRoom = ChatRoom.builder()
 				.name(chatRoomCreate.getRoomName())
 				.isSecret(false)
 				.isGroupChat(true)
+				.maxParticipants(chatRoomCreate.getMaxParticipantCnt())
 				.build();
 		}
 
 		chatRoomRepository.save(chatRoom);
-		// 채팅참여자로 개설자를 추가
-		// ChatParticipant chatParticipant = ChatParticipant.builder()
-		// 	.chatRoom(chatRoom)
-		// 	.member(member)
-		// 	.roomRole(RoomRole.MANAGER)
-		// 	.build();
-		//
-		// chatParticipantRepository.save(chatParticipant);
 		chatParticipantService.addParticipantManager(chatRoom, member);
 		return chatRoom.getRoomId();
 	}
@@ -115,7 +105,7 @@ public class ChatRoomService {
 					c.getChatRoom().getLastMessageContent()
 				)
 				.lastMessageTime(
-					c.getChatRoom().getLastMessageTime()
+					c.getChatRoom().getLastMessageTime() != null ? c.getChatRoom().getLastMessageTime() : LocalDateTime.now()
 				)
 				.build();
 			chatListResDtos.add(dto);
@@ -149,8 +139,10 @@ public class ChatRoomService {
 
 		List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
 		if (chatParticipants.isEmpty()) {
-
+			chatRoomRepository.delete(chatRoom);
 		}
+
+
 
 	}
 
@@ -219,22 +211,35 @@ public class ChatRoomService {
 	 */
 	public PageResponseDTO<ChatRoomListResDto> getGroupChatRooms(
 		ChatRoomSearch chatRoomSearch,
-		PageRequestDTO pageRequestDTO) {
+		PageRequestDTO pageRequestDTO,
+		Member currentMember) {
 
 		Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1, pageRequestDTO.getSize());
-
+		QChatParticipant chatParticipant = QChatParticipant.chatParticipant;
 		List<ChatRoomListResDto> content = queryFactory
 			// 1. Projection: 엔티티 전체가 아니라 DTO에 필요한 필드만 조회 (성능 최적화)
 			.select(Projections.fields(ChatRoomListResDto.class,
-				chatRoom.id.as("roomId"),
+				chatRoom.roomId.as("roomId"),
 				chatRoom.name.as("roomName"),
 				chatRoom.lastMessageTime.as("lastMessageTime"),
-				chatRoom.lastMessageContent.as("lastMessage")
-			))
+				chatRoom.isSecret.as("isSecret"),
+					// [핵심] 서브쿼리로 참여 여부 확인 (True/False 반환)
+					ExpressionUtils.as(
+						JPAExpressions.selectOne()
+							.from(chatParticipant)
+							.where(
+								chatParticipant.chatRoom.eq(chatRoom),
+								chatParticipant.member.eq(currentMember) // 혹은 member.id.eq(currentMember.getId())
+							)
+							.exists(),
+						"isParticipated" // DTO의 필드명과 일치시켜야 함
+					)
+				)
+			)
 			.from(chatRoom)
 			.where(
 				// 2. 동적 쿼리: search 파라미터가 null이면 조건 무시, 있으면 조건 추가
-				eqIsGroupChat(chatRoomSearch.getIsGroupChat()),
+				eqIsGroupChat(),
 				eqIsSecret(chatRoomSearch.getIsSecretChat()),
 				containsName(chatRoomSearch.getRoomName())
 			)
@@ -250,34 +255,19 @@ public class ChatRoomService {
 			.select(chatRoom.count()) // count(*)과 동일
 			.from(chatRoom)
 			.where(
-				eqIsGroupChat(chatRoomSearch.getIsGroupChat()),
+				eqIsGroupChat(),
 				eqIsSecret(chatRoomSearch.getIsSecretChat()),
+				eqIsParticipated(chatRoomSearch.getIsParticipated(), currentMember),
 				containsName(chatRoomSearch.getRoomName())
 			)
 			.fetchOne();
 
 		return new PageResponseDTO<>(content, totalCount, pageRequestDTO);
-		// List<ChatRoom> chatRooms = chatRoomRepository.findByIsGroupChat("Y");
-		// List<ChatRoomListResDto> dtos = new ArrayList<>();
-		// for (ChatRoom c : chatRooms) {
-		// 	ChatRoomListResDto dto = ChatRoomListResDto
-		// 		.builder()
-		// 		.roomId(c.getId())
-		// 		.roomName(c.getName())
-		// 		.build();
-		// 	dtos.add(dto);
-		// }
-		// return dtos;
 	}
 
-	private BooleanExpression isGroupChatEq(boolean isGroupChat) {
-		return chatRoom.isGroupChat.eq(isGroupChat);
-	}
 
-	private BooleanExpression eqIsGroupChat(Boolean isGroupChat) {
-		if (isGroupChat == null)
-			return null;
-		return chatRoom.isGroupChat.eq(isGroupChat);
+	private BooleanExpression eqIsGroupChat() {
+		return chatRoom.isGroupChat.eq(true);
 	}
 
 	private BooleanExpression eqIsSecret(Boolean isSecret) {
@@ -288,5 +278,21 @@ public class ChatRoomService {
 
 	private BooleanExpression containsName(String name) {
 		return StringUtils.hasText(name) ? chatRoom.name.contains(name) : null;
+	}
+
+	private BooleanExpression eqIsParticipated(Boolean isParticipated, Member currentMember) {
+		if (isParticipated == null || !isParticipated) {
+			return null; // 필터링 안 함 (전체 조회)
+		}
+
+		// 내가 참여한 방만 조회 (Join을 쓰는 게 서브쿼리보다 성능상 유리할 수 있음)
+		// 하지만 위 코드 구조상 서브쿼리로 처리하는 게 깔끔함
+		return JPAExpressions.selectOne()
+			.from(QChatParticipant.chatParticipant)
+			.where(
+				QChatParticipant.chatParticipant.chatRoom.eq(chatRoom),
+				QChatParticipant.chatParticipant.member.eq(currentMember)
+			)
+			.exists();
 	}
 }

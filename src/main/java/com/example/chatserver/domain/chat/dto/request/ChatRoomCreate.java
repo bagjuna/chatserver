@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class ChatRoomCreate {
 	private String roomName;
-	private Boolean isGroupChat;
-	private Boolean isSecretChat;
+	private int maxParticipantCnt;
+	private boolean isSecret;
 
 	// optional
 	private String password;
