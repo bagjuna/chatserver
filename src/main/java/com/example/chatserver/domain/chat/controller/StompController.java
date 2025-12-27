@@ -33,7 +33,7 @@ public class StompController {
 //        System.out.println(message);
 //        return message;
 //    }
-//
+
 
     // 방법 2: MessageMapping 어노테이션만 활용
     @MessageMapping("/{roomId}")

@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class ChatRoomSearch {
 	private String roomName;
-	private Boolean isGroupChat;
+	private Boolean isParticipated;
 	private Boolean isSecretChat;
 }

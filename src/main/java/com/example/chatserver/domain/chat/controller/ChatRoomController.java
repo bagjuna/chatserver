@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.chatserver.domain.chat.dto.ChatRoomListResDto;
-import com.example.chatserver.domain.chat.dto.MyChatListResDto;
+import com.example.chatserver.domain.chat.dto.response.ChatRoomListResDto;
+import com.example.chatserver.domain.chat.dto.response.MyChatListResDto;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomCreate;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
 import com.example.chatserver.domain.chat.service.ChatRoomService;
@@ -26,7 +26,9 @@ import com.example.chatserver.global.common.paging.PageResponseDTO;
 import com.example.chatserver.global.security.userdetails.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/chat/room")
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class ChatRoomController {
 	@PostMapping("/group/create")
 	public ResponseEntity<?> createGroupChatRoom(@RequestBody ChatRoomCreate chatRoomCreate,
 		@AuthenticationPrincipal CustomUserDetails userDetails) {
+		log.info("채팅방 개설 요청 받음: {}", chatRoomCreate);
 		Member member = userDetails.getMember();
 		String groupRoomId = chatRoomService.createGroupRoom(chatRoomCreate, member);
 		return ResponseEntity.ok().body(groupRoomId);
@@ -56,12 +59,12 @@ public class ChatRoomController {
 	public ResponseEntity<PageResponseDTO<ChatRoomListResDto>> getGroupChatRoomList(
 		@ModelAttribute ChatRoomSearch chatRoomSearch,
 		// 예: /group/list?page=1&size=10&roomName=축구
-		@ModelAttribute PageRequestDTO pageRequestDTO
+		@ModelAttribute PageRequestDTO pageRequestDTO,
+		@AuthenticationPrincipal CustomUserDetails userDetails
 	) {
-
-		return new ResponseEntity<>(chatRoomService.getGroupChatRooms(chatRoomSearch, pageRequestDTO), HttpStatus.OK);
+		Member member = userDetails.getMember();
+		return new ResponseEntity<>(chatRoomService.getGroupChatRooms(chatRoomSearch, pageRequestDTO,member), HttpStatus.OK);
 	}
-
 
 
 
