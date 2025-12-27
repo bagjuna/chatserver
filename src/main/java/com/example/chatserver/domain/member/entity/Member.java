@@ -11,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Builder
 @AllArgsConstructor
+
 @NoArgsConstructor(access = PROTECTED)
 @Getter
 public class Member extends BaseTimeEntity {

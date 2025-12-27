@@ -1,9 +1,12 @@
 package com.example.chatserver.domain.chat.controller;
 
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
+import com.example.chatserver.domain.chat.dto.SecretChatRoomJoinDto;
 import com.example.chatserver.domain.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +28,16 @@ public class ChatController {
         chatService.addParticipantToGroupChat(roomId);
         return ResponseEntity.ok().build();
     }
+
+    // 비밀 채팅방 참여
+    @PostMapping("/room/secret/{roomId}/join")
+    public ResponseEntity<?> joinPrivateChatRoom(@PathVariable String roomId,
+        @RequestBody SecretChatRoomJoinDto request,
+        @AuthenticationPrincipal UserDetails userDetails) {
+        chatService.addParticipantToPrivateChat(roomId, request.getPassword(), userDetails.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
 
     // 이전 메시지 조회
     @GetMapping("/history/{roomId}")

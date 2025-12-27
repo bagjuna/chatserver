@@ -43,16 +43,30 @@ public class ChatRoom extends BaseTimeEntity {
     @Column(nullable = false)
     private String name;
 
-    // String "N" 대신 boolean 사용
     @Column(nullable = false)
     private boolean isGroupChat;
 
     @Column(nullable = false)
     private boolean isSecret;
 
-    // 비밀번호는 암호화해서 저장하기
+    // 비밀번호는 암호화해서 저장 [추후 구현]
     private String password;
 
+    private Long ownerId;
+
+    // 최대 참여자 수
+    private int maxParticipants;
+    // 낙관적 락을 위한 버전 필드
+    @Version
+    private Long version;
+
+    @Column(columnDefinition = "bigint default 0")
+    private Long totalMessageCount = 0L;
+
+    //== 반정규화 필드 (목록 조회용)==//
+    private Long lastMessageId;
+    private String lastMessageContent;
+    private LocalDateTime lastMessageTime;
 
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE)
     private List<ChatParticipant> chatParticipants = new ArrayList<>();
@@ -60,26 +74,30 @@ public class ChatRoom extends BaseTimeEntity {
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<ChatMessage> chatMessages = new ArrayList<>();
 
-    private Long lastMessageId;
-    private String lastMessageContent;
-    private LocalDateTime lastMessageTime;
+
+    @Builder
+    public ChatRoom(String name, boolean isGroupChat, boolean isSecret, String password, int maxParticipants, Long ownerId) {
+        this.roomId = UUID.randomUUID().toString();
+        this.name = name;
+        this.isGroupChat = isGroupChat;
+        this.isSecret = isSecret;
+        this.password = password;
+        this.maxParticipants = maxParticipants;
+        this.ownerId = ownerId;
+        this.totalMessageCount = 0L;
+    }
+
+    // 인원수 확인 로직 (서비스 계층에서 호출)
+    public boolean canJoin() {
+        return this.chatParticipants.size() < this.maxParticipants;
+    }
 
     // 메시지 보낼 때마다 이 메서드 호출해서 갱신
     public void updateLastMessage(ChatMessage chatMessage) {
         this.lastMessageId = chatMessage.getId();
         this.lastMessageContent = chatMessage.getContent();
         this.lastMessageTime = chatMessage.getCreatedTime();
-    }
-
-
-
-
-    @Builder
-    private ChatRoom(String name, boolean isGroupChat, boolean isSecret, String password) {
-        this.name = name;
-        this.isGroupChat = isGroupChat;
-        this.isSecret = isSecret;
-        this.password = password;
+        this.totalMessageCount++;
     }
 
 }
