@@ -23,7 +23,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
         //    /ws로 연결 요청이 들어오면, 이 endpoint로 연결됨
         registry.addEndpoint("/api/connect")
                 // cors 설정
-                .setAllowedOrigins("http://localhost:5173")
+                .setAllowedOrigins("http://localhost:5173","http://172.29.67.245:5173")
                 // ws://가 아닌 http://로 연결 요청이 들어올 경우, SockJS를 사용하여 연결
                 .withSockJS();
 
@@ -36,7 +36,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // /publish/1 형태로 발행해야 함을 설정
         // /publish로 시작하는 url패턴으로 메시지가 발행되면 @Controller 객체의 @MessageMapping메서드로 라우팅
-        registry.setApplicationDestinationPrefixes("/publish");
+        registry.setApplicationDestinationPrefixes("/pub");
 
         // /topic/1형태로 메시지를 수신(subscribe)해야 함을 설정
         registry.enableSimpleBroker("/topic");

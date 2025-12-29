@@ -1,6 +1,7 @@
 package com.example.chatserver.domain.chat.controller;
 
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
+import com.example.chatserver.domain.chat.dto.ChatParticipantDto;
 import com.example.chatserver.domain.chat.dto.SecretChatRoomJoinDto;
 import com.example.chatserver.domain.chat.service.ChatService;
 import org.springframework.http.HttpStatus;
@@ -11,15 +12,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
 
     private final ChatService chatService;
-
-    public ChatController(ChatService chatService) {
-        this.chatService = chatService;
-    }
 
 
     // 그룹채팅방 참여
@@ -46,12 +46,19 @@ public class ChatController {
         return new ResponseEntity<>(chatMessageDtos, HttpStatus.OK);
     }
 
-    // 채팅메시지 읽음처리
-    @PostMapping("/room/{roomId}/read")
-    public ResponseEntity<?> readChatMessage(@PathVariable String roomId) {
-        chatService.messageRead(roomId);
-        return ResponseEntity.ok().build();
+    // 참여자 목록 조회
+    @GetMapping("/room/{roomId}/participants")
+    public ResponseEntity<?> getChatParticipants(@PathVariable String roomId) {
+        List<ChatParticipantDto> chatParticipants = chatService.getChatParticipants(roomId);
+        return new ResponseEntity<>(chatParticipants, HttpStatus.OK);
     }
+
+    // 채팅메시지 읽음처리
+    // @PostMapping("/room/{roomId}/read")
+    // public ResponseEntity<?> readChatMessage(@PathVariable String roomId) {
+    //     chatService.messageRead(roomId);
+    //     return ResponseEntity.ok().build();
+    // }
 
 
 }

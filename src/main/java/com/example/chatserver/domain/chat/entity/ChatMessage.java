@@ -1,5 +1,6 @@
 package com.example.chatserver.domain.chat.entity;
 
+import com.example.chatserver.domain.chat.dto.MessageType;
 import com.example.chatserver.global.common.BaseTimeEntity;
 import com.example.chatserver.domain.member.entity.Member;
 import jakarta.persistence.*;
@@ -33,5 +34,7 @@ public class ChatMessage extends BaseTimeEntity {
     @Column(nullable = false, length = 500)
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    private MessageType messageType;
 
 }

@@ -85,7 +85,7 @@ public class ChatRoomService {
 	public List<MyChatListResDto> getMyChatRooms(Member member) {
 
 		// 1. member로 내가 참여한 chatParticipant 조회
-		List<ChatParticipant> chatParticipants = chatParticipantRepository.findAllByMemberWithRoom(member);
+		List<ChatParticipant> chatParticipants = chatParticipantService.getParticipantsByMember(member);
 
 		// 2. 각 채팅방별로 읽지 않은 메시지 개수 조회 및 DTO 변환
 		List<MyChatListResDto> chatListResDtos = new ArrayList<>();
@@ -194,11 +194,7 @@ public class ChatRoomService {
 			throw new IllegalArgumentException("그룹채팅이 아닙니다.");
 		}
 
-		// 이미 참여자인지 검증
-		Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
-		if (!participant.isPresent()) {
-			chatParticipantService.addParticipantMember(chatRoom, member);
-		}
+		chatParticipantService.addParticipantMember(chatRoom, member);
 
 	}
 

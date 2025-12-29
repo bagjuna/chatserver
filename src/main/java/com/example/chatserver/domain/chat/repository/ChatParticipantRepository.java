@@ -33,4 +33,15 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
     @Query("SELECT cp FROM ChatParticipant cp " +
         "WHERE cp.chatRoom.roomId = :roomId AND cp.member.publicId = :publicId")
     Optional<ChatParticipant> findByRoomIdAndMemberPublicId(String roomId, String publicId);
+
+    @Query("SELECT COALESCE(cp.lastReadMessageId, 0) FROM ChatParticipant cp WHERE cp.chatRoom.roomId = :roomId")
+    List<Long> findReadCursorsByRoomId(@Param("roomId") String roomId);
+
+
+    boolean existsByChatRoomIdAndMemberId(Long chatRoomId, Long memberId);
+
+    // 채팅방 객체로 인원수 세기
+    Integer countByChatRoom(ChatRoom chatRoom);
+
+
 }
