@@ -32,9 +32,6 @@ public class ChatParticipantService {
 		if(isParticipantMember(chatRoom.getId(), member.getId())) {
 			return;
 		}
-		if (chatRoom.canJoin()) {
-			chatRoom.increaseParticipantCount();
-		}
 
 		ChatParticipant chatParticipant = ChatParticipant.builder()
 			.chatRoom(chatRoom)
@@ -49,11 +46,6 @@ public class ChatParticipantService {
 		if(isParticipantMember(chatRoom.getId(), member.getId())) {
 			return;
 		}
-
-		if (chatRoom.canJoin()) {
-			chatRoom.increaseParticipantCount();
-		}
-
 
 		ChatParticipant chatParticipant = ChatParticipant.builder()
 			.chatRoom(chatRoom)

@@ -3,15 +3,7 @@ package com.example.chatserver.domain.chat.controller;
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
 import com.example.chatserver.domain.chat.dto.ChatParticipantDto;
 import com.example.chatserver.domain.chat.dto.SecretChatRoomJoinDto;
-import com.example.chatserver.domain.chat.dto.request.ChatMessageSearch;
-import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
-import com.example.chatserver.domain.chat.dto.response.ChatRoomListResDto;
 import com.example.chatserver.domain.chat.service.ChatService;
-import com.example.chatserver.domain.member.entity.Member;
-import com.example.chatserver.global.common.paging.PageRequestDTO;
-import com.example.chatserver.global.common.paging.PageResponseDTO;
-import com.example.chatserver.global.security.userdetails.CustomUserDetails;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,21 +41,9 @@ public class ChatController {
 
     // 이전 메시지 조회
     @GetMapping("/history/{roomId}")
-    public ResponseEntity<?> getChatHistory(@PathVariable String roomId,
-        @AuthenticationPrincipal UserDetails userDetails) {
-        List<ChatMessageDto> chatMessageDtos = chatService.getChatHistory(roomId, userDetails.getUsername());
+    public ResponseEntity<?> getChatHistory(@PathVariable String roomId) {
+        List<ChatMessageDto> chatMessageDtos = chatService.getChatHistory(roomId);
         return new ResponseEntity<>(chatMessageDtos, HttpStatus.OK);
-    }
-
-    @GetMapping("/history/{roomId}/paged")
-    public ResponseEntity<PageResponseDTO<ChatMessageDto>> getChatHistoryPaged(
-        @ModelAttribute ChatMessageSearch chatMessageSearch,
-        // 예: /history/{roomId}/paged?
-        @ModelAttribute PageRequestDTO pageRequestDTO,
-        @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Member member = userDetails.getMember();
-        return new ResponseEntity<>(chatService.getChatHistoryPaged(chatMessageSearch, pageRequestDTO, member), HttpStatus.OK);
     }
 
     // 참여자 목록 조회
