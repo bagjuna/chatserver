@@ -1,10 +1,10 @@
 package com.example.chatserver.domain.chat.service;
 
+import com.example.chatserver.domain.chat.dto.ChatParticipantDto;
 import com.example.chatserver.domain.chat.entity.ChatMessage;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
-import com.example.chatserver.domain.chat.entity.RoomRole;
 import com.example.chatserver.domain.chat.repository.ChatMessageRepository;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
@@ -20,173 +20,197 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class ChatService {
 
-    private final ChatRoomRepository chatRoomRepository;
-    private final ChatParticipantRepository chatParticipantRepository;
-    private final ChatMessageRepository chatMessageRepository;
-    private final MemberRepository memberRepository;
+	private final ChatRoomRepository chatRoomRepository;
+	private final ChatParticipantRepository chatParticipantRepository;
+	private final ChatMessageRepository chatMessageRepository;
+	private final MemberRepository memberRepository;
+	private final ChatParticipantService chatParticipantService;
+
+	public ChatMessageDto saveMessage(String roomId, ChatMessageDto chatMessageDto) {
+		// 1. 채팅방 및 보낸 사람 조회
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		);
+		Member sender = memberRepository.findByEmail(chatMessageDto.getSenderEmail()).orElseThrow(
+			() -> new EntityNotFoundException("보낸 사람을 찾을 수 없습니다.")
+		);
+		// 2. 메시지 저장
+		// 2. 메시지 저장 (Insert)
+		ChatMessage chatMessage = ChatMessage.builder()
+			.chatRoom(chatRoom)
+			.member(sender)
+			.content(chatMessageDto.getMessage())
+			.messageType(chatMessageDto.getMessageType())
+			.build();
+		ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+
+		// 3. 방의 마지막 메시지 정보 갱신 (반정규화)
+		chatRoom.updateLastMessage(savedMessage);
+
+		// 4. [작성자님 요청] 여기서 updateReadStatus를 호출!
+		// -> 효과: 보낸 사람(나)의 lastReadMessageId가 방금 보낸 메시지로 업데이트됨.
+		// -> chatMessageDto의 messageId 필드도 여기서 채워짐.
+		updateReadStatus(roomId, sender.getPublicId(), chatMessageDto);
 
 
-    public void saveMessage(String roomId, ChatMessageDto chatMessageDto) {
-        // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
-                () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
-        );
-        // 보낸 사람 조회
-        Member sender = memberRepository.findByEmail(chatMessageDto.getSenderEmail()).orElseThrow(
-                () -> new EntityNotFoundException("보낸 사람을 찾을 수 없습니다.")
-        );
-        // 메시지 저장
-        ChatMessage chatMessage = ChatMessage.builder()
-                .chatRoom(chatRoom)
-                .member(sender)
-                .content(chatMessageDto.getMessage())
-                .build();
-        ChatMessage newChatMessage = chatMessageRepository.save(chatMessage);
+		return chatMessageDto;
+	}
 
-        chatRoom.updateLastMessage(newChatMessage);
+	public void addParticipantToGroupChat(String roomId) {
+		// 채팅방 조회
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		);
+		// member 조회
+		Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext()
+			.getAuthentication().getName()).orElseThrow(
+			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
+		);
 
-        // Fetch Join으로 방 정보까지 한 번에 가져옴
-        updateReadStatus(roomId, sender.getPublicId());
-    }
+		if (!chatRoom.isGroupChat()) {
+			throw new IllegalArgumentException("그룹채팅이 아닙니다.");
+		}
 
+		// 이미 참여자인지 검증
+		Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
+		if (participant.isEmpty()) {
+			chatParticipantService.addParticipantMember(chatRoom, member);
+		}
 
+	}
 
-    public void addParticipantToGroupChat(String roomId) {
-        // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
-                () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
-        );
-        // member 조회
-        Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext()
-                .getAuthentication().getName()).orElseThrow(
-                () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
-        );
+	public void addParticipantToPrivateChat(String roomId, String password, String publicId) {
+		// 채팅방 조회
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		);
+		// member 조회
+		Member member = memberRepository.findByPublicId(publicId).orElseThrow(
+			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
+		);
+		if (chatRoom.isSecret()) {
+			if (!chatRoom.getPassword().equals(password)) {
+				throw new BaseException(ErrorCode.CHAT_ROOM_PASSWORD_INCORRECT);
+			}
 
-        if (!chatRoom.isGroupChat()) {
-            throw new IllegalArgumentException("그룹채팅이 아닙니다.");
-        }
+		}
 
-        // 이미 참여자인지 검증
-        Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
-        if(participant.isEmpty()){
-            addParticipant(chatRoom, member);
-        }
+		chatParticipantService.addParticipantMember(chatRoom, member);
 
+	}
 
-    }
+	public List<ChatMessageDto> getChatHistory(String roomId) {
+		// 내가 해당 채팅방의 참여자가 아닐 경우 에러
+		// 채팅방 조회
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		);
+		// 참여자 조회
+		Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext()
+			.getAuthentication().getName()).orElseThrow(
+			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
+		);
 
-    public void addParticipantToPrivateChat(String roomId, String password, String publicId) {
-        // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
-            () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
-        );
-        // member 조회
-        Member member = memberRepository.findByPublicId(publicId).orElseThrow(
-            () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
-        );
-        if (!chatRoom.isSecret()) {
-            throw new IllegalArgumentException("비밀채팅방이 아닙니다.");
-        }
-        if (!chatRoom.getPassword().equals(password)) {
-            throw new BaseException(ErrorCode.CHAT_ROOM_PASSWORD_INCORRECT);
-        }
-        // 이미 참여자인지 검증
-        Optional<ChatParticipant> participant = chatParticipantRepository.findByChatRoomAndMember(chatRoom, member);
-        if (participant.isEmpty()) {
-            addParticipant(chatRoom, member);
-        }
+		chatParticipantService.isParticipantMember(chatRoom.getId(), member.getId());
 
-    }
+		// 특정 room에 대한 message 조회
+		List<ChatMessage> messages = chatMessageRepository.findAllByRoomIdWithSender(roomId);
+		List<Long> readCursors = chatParticipantRepository.findReadCursorsByRoomId(roomId);
 
-    // chatParticipant 객체 생성 후 저장
-    public void addParticipant(ChatRoom chatRoom, Member member) {
-        ChatParticipant chatParticipant = ChatParticipant.builder()
-                .chatRoom(chatRoom)
-                .member(member)
-                .roomRole(RoomRole.NORMAL)
-                .build();
-        chatParticipantRepository.save(chatParticipant);
-    }
+		// 3. 각 메시지별로 안 읽은 사람 수 계산
+		return messages.stream().map(msg -> {
+			// 내 메시지 ID보다 '작은' 커서를 가진 사람 수 = 아직 이 메시지를 못 본 사람
+			long unreadCount = readCursors.stream()
+				.filter(cursor -> cursor < msg.getId())
+				.count();
 
-    public List<ChatMessageDto> getChatHistory(String roomId) {
-        // 내가 해당 채팅방의 참여자가 아닐 경우 에러
-        // 채팅방 조회
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
-                () -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
-        );
-        // 참여자 조회
-        Member member = memberRepository.findByPublicId(SecurityContextHolder.getContext()
-                .getAuthentication().getName()).orElseThrow(
-                () -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
-        );
+			return ChatMessageDto.builder()
+				.roomId(roomId)
+				.senderEmail(msg.getMember().getEmail())
+				.senderName(msg.getMember().getName())
+				.message(msg.getContent())
+				.createdAt(msg.getCreatedTime())
+				.messageId(msg.getId())
+				.unreadCount((int)unreadCount) // 계산된 수치 주입
+				.build();
+		}).collect(Collectors.toList());
 
-        List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
-        boolean check = false;
-        for (ChatParticipant c : chatParticipants) {
-            if (c.getMember().equals(member)) {
-                check = true;
-            }
-        }
+	}
 
-        if(!check) throw new IllegalArgumentException("본인이 속하지 않은 채팅방입니다.");
-        // 특정 room에 대한 message 조회
-        List<ChatMessage> chatMessages = chatMessageRepository.findByChatRoomOrderByCreatedTimeAsc(chatRoom);
-        List<ChatMessageDto> chatMessageDtos = new ArrayList<>();
-        for (ChatMessage c : chatMessages) {
-            ChatMessageDto chatMessageDto = ChatMessageDto.builder()
-                    .message(c.getContent())
-                    .senderEmail(c.getMember().getEmail())
-                    .createdAt(c.getCreatedTime())
-                    .build();
-            chatMessageDtos.add(chatMessageDto);
-        }
+	public boolean isRoomParticipant(String publicId, String roomId) {
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
+			.orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
+		Member member = memberRepository.findByPublicId(publicId)
+			.orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
 
-        return chatMessageDtos;
+		return chatParticipantService.isParticipantMember(chatRoom.getId(), member.getId());
+	}
+
+	public void messageRead(String roomId, ChatMessageDto chatMessageDto) {
+		Member sender = memberRepository.findByEmail(chatMessageDto.getSenderEmail()).orElseThrow(
+			() -> new EntityNotFoundException("보낸 사람을 찾을 수 없습니다.")
+		);
+		updateReadStatus(roomId, sender.getPublicId(), chatMessageDto);
 
 
-    }
+	}
 
-    public boolean isRoomParticipant(String publicId, String roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(() -> new EntityNotFoundException("채팅방이 존재하지 않습니다."));
-        Member member = memberRepository.findByPublicId(publicId).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+	public void updateReadStatus(String roomId, String publicId, ChatMessageDto chatMessageDto) {
 
-        List<ChatParticipant> chatParticipants = chatParticipantRepository.findByChatRoom(chatRoom);
-        for (ChatParticipant c : chatParticipants) {
-            if(c.getMember().equals(member)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    public void messageRead(String roomId) {
-        String publicId = SecurityContextHolder.getContext().getAuthentication().getName();
-        updateReadStatus(roomId, publicId);
-    }
-
-    private void updateReadStatus(String roomId, String publicId) {
-        // Fetch Join으로 방 정보까지 한 번에 가져옴
-        ChatParticipant participant = chatParticipantRepository.findByRoomIdAndMemberPublicId
+		// Fetch Join으로 방 정보까지 한 번에 가져옴
+		ChatParticipant participant = chatParticipantRepository.findByRoomIdAndMemberPublicId
 				(roomId, publicId)
-            .orElseThrow(
-                () -> new EntityNotFoundException("참여방을 찾을 수 없습니다.")
-            );
+			.orElseThrow(
+				() -> new EntityNotFoundException("참여방을 찾을 수 없습니다.")
+			);
 
-        // [최고 성능] ChatMessage 테이블 조회 없이(쿼리 0회), ChatRoom에 캐싱된 ID 사용
-        Long latestId = participant.getChatRoom().getLastMessageId();
+		// 2. 방의 최신 메시지 ID 가져오기 (캐싱된 데이터 활용 - 성능 최적화)
+		Long currentLastMessageId = participant.getChatRoom().getLastMessageId();
 
-        if (latestId != null && (participant.getLastReadMessageId() == null || participant.getLastReadMessageId() < latestId)) {
-            participant.updateLastReadMessage(latestId);
-        }
-    }
+		// 3. 커서 업데이트 (내 커서가 최신보다 뒤처져 있을 때만)
+		// 주의: currentLastMessageId가 null이면(메시지가 없는 방) 0L 반환
+		if (currentLastMessageId == null) {
+			return ;
+		}
+
+		if (participant.getLastReadMessageId() == null || participant.getLastReadMessageId() < currentLastMessageId) {
+			participant.updateLastReadMessage(currentLastMessageId);
+			// Dirty Checking으로 자동 저장됨
+		}
+
+		// 4. [중요] 업데이트된 ID 반환 (Controller에서 브로드캐스팅용으로 사용)
+
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		);
+		int totalParticipants = chatParticipantRepository.countByChatRoom(chatRoom);
+		int unreadCount = (totalParticipants > 0) ? totalParticipants - 1 : 0;
+
+		chatMessageDto.updateMessageId(currentLastMessageId, unreadCount);
+		// chatMessageDto.setUnreadCount(unreadCount); // "1" (상대방이 안 읽었음)
+	}
+
+	public List<ChatParticipantDto> getChatParticipants(String roomId) {
+		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
+			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		);
+
+		List<ChatParticipant> participants = chatParticipantRepository.findByChatRoom(chatRoom);
+
+		return participants.stream().map(participant -> ChatParticipantDto.builder()
+			.email(participant.getMember().getEmail())
+			.name(participant.getMember().getName())
+			.lastReadMessageId(participant.getLastReadMessageId())
+			.build()
+		).collect(Collectors.toList());
+	}
 }

@@ -13,8 +13,11 @@ import java.util.Optional;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
-    List<ChatMessage> findByChatRoomOrderByCreatedTimeAsc(ChatRoom chatRoom);
-
+	@Query("SELECT cm FROM ChatMessage cm " +
+		"JOIN FETCH cm.member " +        // <--- 핵심! 작성자 정보 즉시 로딩
+		"WHERE cm.chatRoom.roomId = :roomId " +
+		"ORDER BY cm.createdTime ASC")
+	List<ChatMessage> findAllByRoomIdWithSender(@Param("roomId") String roomId);
 	@Query(
 		"SELECT cm FROM ChatMessage cm WHERE cm.chatRoom = :chatRoom AND cm.id > :lastMessageId ORDER BY cm.createdTime ASC"
 	)
