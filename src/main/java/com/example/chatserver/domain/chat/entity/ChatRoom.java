@@ -2,6 +2,9 @@ package com.example.chatserver.domain.chat.entity;
 
 
 import com.example.chatserver.global.common.BaseTimeEntity;
+import com.example.chatserver.global.common.error.BaseException;
+import com.example.chatserver.global.common.error.ErrorCode;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,6 +59,9 @@ public class ChatRoom extends BaseTimeEntity {
 
     // 최대 참여자 수
     private int maxParticipants;
+
+    @Column(nullable = false)
+    private int participantCount = 0;
     // 낙관적 락을 위한 버전 필드
     @Version
     private Long version;
@@ -87,9 +93,25 @@ public class ChatRoom extends BaseTimeEntity {
         this.totalMessageCount = 0L;
     }
 
-    // 인원수 확인 로직 (서비스 계층에서 호출)
+    // 1. 입장 시 호출 (인원수 증가)
+    public void increaseParticipantCount() {
+        if (this.participantCount + 1 > this.maxParticipants) {
+            throw new BaseException(ErrorCode.CHAT_ROOM_FULL);
+        }
+        this.participantCount++;
+    }
+
+    // 2. 퇴장 시 호출 (인원수 감소)
+    public void decreaseParticipantCount() {
+        if (this.participantCount - 1 < 0) {
+            throw new BaseException(ErrorCode.CHAT_ROOM_PARTICIPANT_LEAVE_FAIL);
+        }
+        this.participantCount--;
+    }
+
+    // 3. 인원수 확인 로직 수정 (리스트 size() 대신 카운트 필드 사용 -> 성능 향상)
     public boolean canJoin() {
-        return this.chatParticipants.size() < this.maxParticipants;
+        return this.participantCount < this.maxParticipants;
     }
 
     // 메시지 보낼 때마다 이 메서드 호출해서 갱신
