@@ -1,6 +1,7 @@
 package com.example.chatserver.domain.chat.service;
 
 import com.example.chatserver.domain.chat.dto.ChatParticipantDto;
+import com.example.chatserver.domain.chat.dto.request.ChatMessageSearch;
 import com.example.chatserver.domain.chat.entity.ChatMessage;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
@@ -12,6 +13,8 @@ import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.example.chatserver.global.common.error.BaseException;
 import com.example.chatserver.global.common.error.ErrorCode;
+import com.example.chatserver.global.common.paging.PageRequestDTO;
+import com.example.chatserver.global.common.paging.PageResponseDTO;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -144,6 +147,37 @@ public class ChatService {
 				.build();
 		}).collect(Collectors.toList());
 
+	}
+
+	public PageResponseDTO<ChatMessageDto> getChatHistoryPaged(
+		ChatMessageSearch chatMessageSearch,
+		PageRequestDTO pageRequestDTO,
+		Member member) {
+		// // 내가 해당 채팅방의 참여자가 아닐 경우 에러
+		// // 채팅방 조회
+		// ChatRoom chatRoom = chatRoomRepository.findByRoomId(chatMessageSearch.getRoomId()).orElseThrow(
+		// 	() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
+		// );
+		//
+		// chatParticipantService.isParticipantMember(chatRoom.getId(), member.getId());
+		//
+		// // 페이징된 메시지 조회
+		// PageResponseDTO<ChatMessageDto> pagedMessages = chatMessageRepository.findPagedMessagesByRoomId(
+		// 	chatMessageSearch, pageRequestDTO);
+		//
+		// // 3. 각 메시지별로 안 읽은 사람 수 계산
+		// List<Long> readCursors = chatParticipantRepository.findReadCursorsByRoomId(chatMessageSearch.getRoomId());
+		//
+		// pagedMessages.getDtoList().forEach(msgDto -> {
+		// 	// 내 메시지 ID보다 '작은' 커서를 가진 사람 수 = 아직 이 메시지를 못 본 사람
+		// 	long unreadCount = readCursors.stream()
+		// 		.filter(cursor -> cursor < msgDto.getMessageId())
+		// 		.count();
+		// 	msgDto.setUnreadCount((int)unreadCount); // 계산된 수치 주입
+		// });
+		//
+		// return pagedMessages;
+		return new PageResponseDTO<>();
 	}
 
 	public boolean isRoomParticipant(String publicId, String roomId) {

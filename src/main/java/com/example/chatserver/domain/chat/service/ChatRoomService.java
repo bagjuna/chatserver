@@ -100,6 +100,7 @@ public class ChatRoomService {
 				.roomId(c.getChatRoom().getRoomId())
 				.roomName(c.getChatRoom().getName())
 				.isGroupChat(c.getChatRoom().isGroupChat())
+				.isSecret(c.getChatRoom().isSecret())
 				.unReadCount(unreadCount)
 				.lastMessage(
 					c.getChatRoom().getLastMessageContent()
@@ -107,13 +108,14 @@ public class ChatRoomService {
 				.lastMessageTime(
 					c.getChatRoom().getLastMessageTime() != null ? c.getChatRoom().getLastMessageTime() : LocalDateTime.now()
 				)
+				.participantCnt(c.getChatRoom().getParticipantCount())
 				.build();
 			chatListResDtos.add(dto);
 		}
 
 		return chatListResDtos.stream().sorted(
 			(o1, o2) -> {
-				if (o1.getUnReadCount() != o2.getUnReadCount()) {
+				if (!o1.getUnReadCount().equals(o2.getUnReadCount())) {
 					return o2.getUnReadCount().compareTo(o1.getUnReadCount());
 				}
 				else {
@@ -168,6 +170,7 @@ public class ChatRoomService {
 			.name(member.getName() + "-" + otherMember.getName())
 			.isSecret(false)
 			.password(null)
+			.maxParticipants(2)
 			.build();
 
 		chatRoomRepository.save(newRoom);

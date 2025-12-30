@@ -74,7 +74,9 @@ public enum ErrorCode {
     CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 채팅 메시지를 찾을 수 없습니다."),
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 채팅방을 찾을 수 없습니다."),
     PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방 참여자를 찾을 수 없습니다."),
-    CHAT_ROOM_PASSWORD_INCORRECT(HttpStatus.FORBIDDEN, "채팅방 비밀번호가 올바르지 않습니다.")
+    CHAT_ROOM_PASSWORD_INCORRECT(HttpStatus.FORBIDDEN, "채팅방 비밀번호가 올바르지 않습니다."),
+    CHAT_ROOM_FULL(HttpStatus.FORBIDDEN, "채팅방 정원이 가득 찼습니다."),
+    CHAT_ROOM_PARTICIPANT_LEAVE_FAIL(HttpStatus.INTERNAL_SERVER_ERROR, "채팅방 참여자 퇴장 처리에 실패했습니다.")
     ;
 
     private final HttpStatus status;
