@@ -1,7 +1,10 @@
 package com.example.chatserver.domain.chat.repository;
 
+import com.example.chatserver.domain.chat.dto.MessageType;
 import com.example.chatserver.domain.chat.entity.ChatMessage;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
+import com.example.chatserver.domain.member.entity.Member;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +32,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 	// long countByRoomIdAndIdGreaterThan(ChatRoom chatRoom, long l);
 	@Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.chatRoom = :chatRoom AND cm.id > :lastReadMessageId")
 	long countByRoomIdAndIdGreaterThan(ChatRoom chatRoom, long lastReadMessageId);
+
+	@Query("INSERT INTO ChatMessage (chatRoom, member, content, messageType) " +
+		"VALUES (:chatRoom, :member, :enterMessageContent, :messageType)")
+	void saveEnterMessage(ChatRoom chatRoom, Member member, String enterMessageContent, MessageType messageType);
 }
