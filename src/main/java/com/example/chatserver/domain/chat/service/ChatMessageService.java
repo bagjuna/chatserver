@@ -52,6 +52,9 @@ public class ChatMessageService {
 		ChatMessage savedMessage = chatMessageRepository.save(enterMessage);
 		chatRoom.updateLastMessage(savedMessage);
 
+		// 4. [작성자님 요청] 여기서 updateReadStatus를 호출!
+		// -> 효과: 보낸 사람(나)의 lastReadMessageId가 방금 보낸 메시지로 업데이트됨.
+		// -> chatMessageDto의 messageId 필드도 여기서 채워짐.
 		updateReadStatus(chatRoom.getRoomId(), member.getPublicId(), new ChatMessageDto());
 		return savedMessage;
 	}

@@ -37,6 +37,7 @@ public class ChatService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final MemberRepository memberRepository;
 	private final ChatParticipantService chatParticipantService;
+	private final ChatMessageService chatMessageService;
 
 	public ChatMessageDto saveMessage(String roomId, ChatMessageDto chatMessageDto) {
 		// 1. 채팅방 및 보낸 사람 조회
@@ -47,7 +48,6 @@ public class ChatService {
 			() -> new EntityNotFoundException("보낸 사람을 찾을 수 없습니다.")
 		);
 		// 2. 메시지 저장
-		// 2. 메시지 저장 (Insert)
 		ChatMessage chatMessage = ChatMessage.builder()
 			.chatRoom(chatRoom)
 			.member(sender)
@@ -88,6 +88,7 @@ public class ChatService {
 		if (participant.isEmpty()) {
 			chatParticipantService.addParticipantMember(chatRoom, member);
 		}
+		chatMessageService.sendEnterMessage(chatRoom, member);
 
 	}
 
@@ -195,6 +196,10 @@ public class ChatService {
 		);
 		updateReadStatus(roomId, sender.getPublicId(), chatMessageDto);
 
+
+	}
+
+	public void sendEnter(ChatRoom chatRoom, Member member) {
 
 	}
 
