@@ -199,9 +199,7 @@ public class ChatService {
 
 	}
 
-	public void sendEnter(ChatRoom chatRoom, Member member) {
 
-	}
 
 	public void updateReadStatus(String roomId, String publicId, ChatMessageDto chatMessageDto) {
 
@@ -235,7 +233,6 @@ public class ChatService {
 		int unreadCount = (totalParticipants > 0) ? totalParticipants - 1 : 0;
 
 		chatMessageDto.updateMessageId(currentLastMessageId, unreadCount);
-		// chatMessageDto.setUnreadCount(unreadCount); // "1" (상대방이 안 읽었음)
 	}
 
 	public List<ChatParticipantDto> getChatParticipants(String roomId) {
