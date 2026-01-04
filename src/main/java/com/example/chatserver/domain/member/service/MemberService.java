@@ -26,7 +26,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class MemberService {
 
 	private final MemberRepository memberRepository;
@@ -42,6 +42,7 @@ public class MemberService {
 		this.passwordEncoder = passwordEncoder;
 	}
 
+	@Transactional
 	public ResponseEntity<LoginResponse> signup(SignupRequest signupRequest) {
 		// 이미 가입되어 있는 회원인지 확인
 		if (memberRepository.findByEmail(signupRequest.getEmail()).isPresent()) {

@@ -1,6 +1,7 @@
 package com.example.chatserver.domain.chat.service;
 
 import static com.example.chatserver.domain.chat.entity.QChatRoom.*;
+import static  com.example.chatserver.domain.chat.entity.QChatParticipant.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,7 +22,6 @@ import com.example.chatserver.domain.chat.dto.request.ChatRoomCreate;
 import com.example.chatserver.domain.chat.dto.request.ChatRoomSearch;
 import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
-import com.example.chatserver.domain.chat.entity.QChatParticipant;
 import com.example.chatserver.domain.chat.repository.ChatMessageRepository;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
@@ -214,7 +214,6 @@ public class ChatRoomService {
 		Member currentMember) {
 
 		Pageable pageable = PageRequest.of(pageRequestDTO.getPage() - 1, pageRequestDTO.getSize());
-		QChatParticipant chatParticipant = QChatParticipant.chatParticipant;
 		List<ChatRoomListResDto> content = queryFactory
 			// 1. Projection: 엔티티 전체가 아니라 DTO에 필요한 필드만 조회 (성능 최적화)
 			.select(Projections.fields(ChatRoomListResDto.class,
@@ -265,6 +264,8 @@ public class ChatRoomService {
 	}
 
 
+
+
 	private BooleanExpression eqIsGroupChat() {
 		return chatRoom.isGroupChat.eq(true);
 	}
@@ -287,10 +288,10 @@ public class ChatRoomService {
 		// 내가 참여한 방만 조회 (Join을 쓰는 게 서브쿼리보다 성능상 유리할 수 있음)
 		// 하지만 위 코드 구조상 서브쿼리로 처리하는 게 깔끔함
 		return JPAExpressions.selectOne()
-			.from(QChatParticipant.chatParticipant)
+			.from(chatParticipant)
 			.where(
-				QChatParticipant.chatParticipant.chatRoom.eq(chatRoom),
-				QChatParticipant.chatParticipant.member.eq(currentMember)
+				chatParticipant.chatRoom.eq(chatRoom),
+				chatParticipant.member.eq(currentMember)
 			)
 			.exists();
 	}

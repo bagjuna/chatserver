@@ -1,5 +1,7 @@
 package com.example.chatserver.domain.chat.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,8 +27,22 @@ public class ChatMessageService {
 	private final ChatParticipantRepository chatParticipantRepository;
 	private final ChatRoomRepository chatRoomRepository;
 
+	public void saveMessage(ChatRoom chatRoom, Member sender, ChatMessageDto chatMessageDto) {
+		ChatMessage chatMessage = ChatMessage.builder()
+			.chatRoom(chatRoom)
+			.member(sender)
+			.content(chatMessageDto.getMessage())
+			.messageType(chatMessageDto.getMessageType())
+			.build();
+		ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+
+		// 3. 방의 마지막 메시지 정보 갱신 (반정규화)
+		chatRoom.updateLastMessage(savedMessage);
+
+	}
+
 	public ChatMessage sendEnterMessage(ChatRoom chatRoom, Member member) {
-		ChatMessage enterMessage = ChatMessage.builder()
+		ChatMessage enterMessage = ChatMessage.builder ()
 			.chatRoom(chatRoom)
 			.member(member)
 			.content(member.getName() + "님이 입장하셨습니다.") // 입장 메시지 내용
@@ -71,4 +87,10 @@ public class ChatMessageService {
 
 		chatMessageDto.updateMessageId(currentLastMessageId, unreadCount);
 	}
+
+	@Transactional(readOnly = true)
+	public List<ChatMessage> getMessagesByRoomId(String roomId) {
+		return chatMessageRepository.findAllByRoomIdWithSender(roomId);
+	}
+
 }
