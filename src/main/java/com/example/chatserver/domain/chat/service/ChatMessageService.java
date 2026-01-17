@@ -41,24 +41,6 @@ public class ChatMessageService {
 
 	}
 
-	public ChatMessage sendEnterMessage(ChatRoom chatRoom, Member member) {
-		ChatMessage enterMessage = ChatMessage.builder ()
-			.chatRoom(chatRoom)
-			.member(member)
-			.content(member.getName() + "님이 입장하셨습니다.") // 입장 메시지 내용
-			.messageType(MessageType.ENTER)
-			.build();
-
-		ChatMessage savedMessage = chatMessageRepository.save(enterMessage);
-		chatRoom.updateLastMessage(savedMessage);
-
-		// 4. [작성자님 요청] 여기서 updateReadStatus를 호출!
-		// -> 효과: 보낸 사람(나)의 lastReadMessageId가 방금 보낸 메시지로 업데이트됨.
-		// -> chatMessageDto의 messageId 필드도 여기서 채워짐.
-		updateReadStatus(chatRoom.getRoomId(), member.getPublicId(), new ChatMessageDto());
-		return savedMessage;
-	}
-
 	public void updateReadStatus(String roomId, String publicId, ChatMessageDto chatMessageDto) {
 
 		// Fetch Join으로 방 정보까지 한 번에 가져옴
@@ -89,6 +71,21 @@ public class ChatMessageService {
 		int unreadCount = (totalParticipants > 0) ? totalParticipants - 1 : 0;
 
 		chatMessageDto.updateMessageId(currentLastMessageId, unreadCount);
+	}
+
+	public ChatMessage sendEnterMessage(ChatRoom chatRoom, Member member) {
+		ChatMessage enterMessage = ChatMessage.builder ()
+			.chatRoom(chatRoom)
+			.member(member)
+			.content(member.getName() + "님이 입장하셨습니다.") // 입장 메시지 내용
+			.messageType(MessageType.ENTER)
+			.build();
+
+		ChatMessage savedMessage = chatMessageRepository.save(enterMessage);
+		chatRoom.updateLastMessage(savedMessage);
+
+		updateReadStatus(chatRoom.getRoomId(), member.getPublicId(), new ChatMessageDto());
+		return savedMessage;
 	}
 
 	@Transactional(readOnly = true)
