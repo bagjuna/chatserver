@@ -27,6 +27,8 @@ import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
 import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
+import com.example.chatserver.global.common.error.BaseException;
+import com.example.chatserver.global.common.error.ErrorCode;
 import com.example.chatserver.global.common.paging.PageRequestDTO;
 import com.example.chatserver.global.common.paging.PageResponseDTO;
 import com.querydsl.core.types.ExpressionUtils;
@@ -49,6 +51,11 @@ public class ChatRoomService {
 	private final ChatParticipantService chatParticipantService;
 	private final ChatMessageRepository chatMessageRepository;
 	private final JPAQueryFactory queryFactory;
+
+	public ChatRoom getChatRoomById(String roomId) {
+		return chatRoomRepository.findByRoomId(roomId)
+			.orElseThrow(() -> new BaseException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+	}
 
 	public String createGroupRoom(ChatRoomCreate chatRoomCreate, Member member) {
 
