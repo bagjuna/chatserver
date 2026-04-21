@@ -49,8 +49,10 @@ public class ChatController {
 
     // 이전 메시지 조회
     @GetMapping("/history/{roomId}")
-    public ResponseEntity<?> getChatHistory(@PathVariable String roomId) {
-        List<ChatMessageDto> chatMessageDtos = chatService.getChatHistory(roomId);
+    public ResponseEntity<?> getChatHistory(@PathVariable String roomId,
+        @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Member member = userDetails.getMember();
+        List<ChatMessageDto> chatMessageDtos = chatService.getChatHistory(roomId, member.getPublicId());
         return new ResponseEntity<>(chatMessageDtos, HttpStatus.OK);
     }
 

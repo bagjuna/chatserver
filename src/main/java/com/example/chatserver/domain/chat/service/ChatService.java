@@ -91,7 +91,7 @@ public class ChatService {
 
 	}
 
-	public List<ChatMessageDto> getChatHistory(String roomId,String publicId) {
+	public List<ChatMessageDto> getChatHistory(String roomId, String publicId) {
 		// 내가 해당 채팅방의 참여자가 아닐 경우 에러
 		// 채팅방 조회
 		ChatRoom chatRoom = chatRoomService.getChatRoomById(roomId);
@@ -201,9 +201,8 @@ public class ChatService {
 
 		// 4. [중요] 업데이트된 ID 반환 (Controller에서 브로드캐스팅용으로 사용)
 
-		ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId).orElseThrow(
-			() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
-		);
+		ChatRoom chatRoom = chatRoomService.getChatRoomById(roomId);
+
 		int totalParticipants = chatParticipantRepository.countByChatRoom(chatRoom);
 		int unreadCount = (totalParticipants > 0) ? totalParticipants - 1 : 0;
 
