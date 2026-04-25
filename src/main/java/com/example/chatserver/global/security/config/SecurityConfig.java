@@ -58,7 +58,8 @@ public class SecurityConfig {
 					"/test/anonymous",
 					"/api/actuator/health",
 					"/ws-test/**",
-					"/api/connect/**"
+					"/api/connect/**",
+					"/test/upload/**"
 					// "/publish/**",
 					// "/topic/**"
 				).permitAll()
