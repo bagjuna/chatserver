@@ -22,6 +22,18 @@ spring:
         format_sql: true
 
 
+cloud:
+  aws:
+    s3:
+      bucket: ${bucketName}
+    region:
+      static: ap-northeast-2
+    stack:
+      auto: false
+    credentials:
+      access-key: ${accessKey}
+      secret-key: ${secretAccessKey}
+
 jwt:
   secretKey: ${secretKey}
   expiration: 86400 # 24 hours
