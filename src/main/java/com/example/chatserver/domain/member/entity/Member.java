@@ -1,5 +1,6 @@
 package com.example.chatserver.domain.member.entity;
 
+import com.example.chatserver.domain.profile.ProfileImage;
 import com.example.chatserver.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,15 +28,20 @@ public class Member extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String password;
 
-
     @Column(nullable = false, unique = true, updatable = false)
     private String publicId;
+
+    @OneToOne(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ProfileImage profileImage;
 
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Role role = Role.USER;
 
 
+    public void updateProfileImage(ProfileImage profileImage) {
+        this.profileImage = profileImage;
+    }
 
 
 }
