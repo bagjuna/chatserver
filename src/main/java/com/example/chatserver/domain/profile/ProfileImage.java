@@ -31,6 +31,13 @@ public class ProfileImage extends BaseTimeEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
+
+    public void updateImageInfo(String imageUrl, String storeFileName, String uploadFileName) {
+        this.imageUrl = imageUrl;
+        this.storeFileName = storeFileName;
+        this.uploadFileName = uploadFileName;
+    }
+
     @Builder
     public ProfileImage(String storeFileName, String uploadFileName, String imageUrl, Member member) {
         this.storeFileName = storeFileName;
