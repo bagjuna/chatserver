@@ -9,10 +9,14 @@ import com.example.chatserver.domain.member.entity.Role;
 import com.example.chatserver.domain.member.exception.AlreadyExistEmailException;
 import com.example.chatserver.domain.member.exception.PasswordIncorrectException;
 import com.example.chatserver.domain.member.repository.MemberRepository;
+import com.example.chatserver.domain.profile.ProfileImage;
+import com.example.chatserver.domain.profile.repository.ProfileImageRepository;
+import com.example.chatserver.domain.profile.service.ImageStorage;
 import com.example.chatserver.global.common.error.BaseException;
 import com.example.chatserver.global.common.error.ErrorCode;
 import com.example.chatserver.global.security.jwt.JwtUtil;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,11 +25,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MemberService {
 
@@ -33,14 +39,9 @@ public class MemberService {
 	private final JwtUtil jwtUtil;
 	private final StringRedisTemplate redisTemplate;
 	private final PasswordEncoder passwordEncoder;
+	private final ImageStorage imageStorage;
+	private final ProfileImageRepository profileImageRepository;
 
-	public MemberService(MemberRepository memberRepository, JwtUtil jwtUtil, StringRedisTemplate redisTemplate,
-		PasswordEncoder passwordEncoder) {
-		this.memberRepository = memberRepository;
-		this.jwtUtil = jwtUtil;
-		this.redisTemplate = redisTemplate;
-		this.passwordEncoder = passwordEncoder;
-	}
 
 	@Transactional
 	public ResponseEntity<LoginResponse> signup(SignupRequest signupRequest) {
@@ -153,4 +154,45 @@ public class MemberService {
 			);
 	}
 
+	@Transactional
+	public String updateProfileImage(String publicId, MultipartFile file) {
+		// 1. 회원 조회
+		Member member = memberRepository.findByPublicId(publicId)
+			.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+		// 2. 파일 저장 (예: AWS S3, 로컬 파일 시스템 등)
+		ProfileImage existingImage = member.getProfileImage();
+		if (existingImage != null) {
+			// S3 삭제 로직은 ImageStorage 인터페이스에 delete 메서드를 추가로 구현 예정
+			// imageStorage.delete("profiles/" + publicId + "/" + existingImage.getStoreFileName());
+		}
+
+		// 3. S3에 새 이미지 업로드 (폴더 경로: profiles/{publicId})
+		String directory = "profiles/" + member.getPublicId();
+		String imageUrl = imageStorage.upload(file, directory);
+
+		// 4. 엔티티 생성 또는 업데이트
+		String storeFileName = extractFileName(imageUrl);
+
+		if (existingImage == null) {
+			// 처음 프로필 이미지를 등록하는 경우
+			ProfileImage newProfileImage = ProfileImage.builder()
+				.imageUrl(imageUrl)
+				.storeFileName(storeFileName)
+				.uploadFileName(file.getOriginalFilename())
+				.member(member)
+				.build();
+			member.updateProfileImage(newProfileImage);
+			profileImageRepository.save(newProfileImage);
+		} else {
+			// 기존 이미지가 있는 경우 (Dirty Checking으로 업데이트)
+			existingImage.updateImageInfo(imageUrl, storeFileName, file.getOriginalFilename());
+		}
+		return imageUrl;
+	}
+
+	// URL에서 파일명만 추출하는 편의 메서드
+	private String extractFileName(String url) {
+		return url.substring(url.lastIndexOf("/") + 1);
+	}
 }
