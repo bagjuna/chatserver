@@ -4,6 +4,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "InfoChange", description = "회원 정보 수정")
 public class MemberInfoController {
 	private final MemberService memberService; // 정보 수정 비즈니스 로직 담당
+
+	@Operation(summary = "프로필 이미지 조회", description = "로그인한 유저의 프로필 이미지 URL을 조회합니다.")
+	@GetMapping("/profile-image")
+	public ResponseEntity<String> getProfileImage(
+		@AuthenticationPrincipal UserDetails userDetails) {
+		String imageUrl = memberService.getProfileImage(userDetails.getUsername());
+		return ResponseEntity.ok(imageUrl);
+	}
 
 	@Operation(summary = "프로필 이미지 변경", description = "로그인한 유저의 프로필 이미지를 S3에 업로드하고 변경합니다.")
 	@PostMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

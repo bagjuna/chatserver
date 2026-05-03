@@ -191,6 +191,18 @@ public class MemberService {
 		return imageUrl;
 	}
 
+	// 프로필 이미지 조회
+	public String getProfileImage(String publicId) {
+		Member member = memberRepository.findByPublicId(publicId)
+			.orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+		ProfileImage profileImage = member.getProfileImage();
+		if (profileImage == null) {
+			throw new IllegalArgumentException("프로필 이미지가 등록되지 않았습니다.");
+		}
+		return profileImage.getImageUrl();
+	}
+
 	// URL에서 파일명만 추출하는 편의 메서드
 	private String extractFileName(String url) {
 		return url.substring(url.lastIndexOf("/") + 1);
