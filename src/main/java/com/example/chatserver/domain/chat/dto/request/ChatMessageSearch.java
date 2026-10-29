@@ -8,4 +8,5 @@ import lombok.Data;
 public class ChatMessageSearch {
 	private String messageContent;
 	private MessageType messageType;
+	private boolean latest;
 }

@@ -6,6 +6,8 @@ import com.example.chatserver.domain.chat.entity.ChatRoom;
 import com.example.chatserver.domain.member.entity.Member;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,6 +23,24 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 		"WHERE cm.chatRoom.roomId = :roomId " +
 		"ORDER BY cm.createdTime ASC")
 	List<ChatMessage> findAllByRoomIdWithSender(@Param("roomId") String roomId);
+
+	@Query(value = "SELECT cm FROM ChatMessage cm " +
+		"JOIN FETCH cm.member " +
+		"WHERE cm.chatRoom.roomId = :roomId " +
+		"AND (:messageContent IS NULL OR :messageContent = '' OR cm.content LIKE CONCAT('%', :messageContent, '%')) " +
+		"AND (:messageType IS NULL OR cm.messageType = :messageType) " +
+		"ORDER BY cm.createdTime ASC",
+		countQuery = "SELECT COUNT(cm) FROM ChatMessage cm " +
+			"WHERE cm.chatRoom.roomId = :roomId " +
+			"AND (:messageContent IS NULL OR :messageContent = '' OR cm.content LIKE CONCAT('%', :messageContent, '%')) " +
+			"AND (:messageType IS NULL OR cm.messageType = :messageType)")
+	Page<ChatMessage> findPagedByRoomId(
+		@Param("roomId") String roomId,
+		@Param("messageContent") String messageContent,
+		@Param("messageType") MessageType messageType,
+		Pageable pageable);
+
+	long countByChatRoomRoomId(String roomId);
 	@Query(
 		"SELECT cm FROM ChatMessage cm WHERE cm.chatRoom = :chatRoom AND cm.id > :lastMessageId ORDER BY cm.createdTime ASC"
 	)

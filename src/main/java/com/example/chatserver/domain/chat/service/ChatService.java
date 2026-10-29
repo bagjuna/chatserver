@@ -7,7 +7,7 @@ import com.example.chatserver.domain.chat.entity.ChatParticipant;
 import com.example.chatserver.domain.chat.entity.ChatRoom;
 import com.example.chatserver.domain.chat.dto.ChatMessageDto;
 import com.example.chatserver.domain.chat.repository.ChatParticipantRepository;
-import com.example.chatserver.domain.chat.repository.ChatRoomRepository;
+import com.example.chatserver.domain.chat.repository.ChatMessageRepository;
 import com.example.chatserver.domain.member.entity.Member;
 import com.example.chatserver.domain.member.repository.MemberRepository;
 import com.example.chatserver.global.common.error.BaseException;
@@ -18,6 +18,8 @@ import com.example.chatserver.global.common.paging.PageResponseDTO;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,7 @@ public class ChatService {
 	private final ChatParticipantRepository chatParticipantRepository;
 	private final ChatParticipantService chatParticipantService;
 	private final ChatMessageService chatMessageService;
+	private final ChatMessageRepository chatMessageRepository;
 	private final MemberRepository memberRepository;
 
 	public ChatMessageDto saveMessage(String roomId, ChatMessageDto chatMessageDto) {
@@ -91,24 +94,30 @@ public class ChatService {
 
 	}
 
-	public List<ChatMessageDto> getChatHistory(String roomId, String publicId) {
-		// 내가 해당 채팅방의 참여자가 아닐 경우 에러
+	public PageResponseDTO<ChatMessageDto> getChatHistoryPaged(
+		ChatMessageSearch chatMessageSearch, String roomId,
+		PageRequestDTO pageRequestDTO,
+		Member member) {
 		// 채팅방 조회
 		ChatRoom chatRoom = chatRoomService.getChatRoomById(roomId);
-		// 참여자 조회
-		Member member = memberRepository.findByPublicId(publicId).orElseThrow(
-			() -> new EntityNotFoundException("사용자를 찾을 수 없습니다.")
-		);
 
 		chatParticipantService.isParticipantMember(chatRoom.getId(), member.getId());
 
-		// 특정 room에 대한 message 조회
-		List<ChatMessage> messages = chatMessageService.getMessagesByRoomId(roomId);
+		int page = pageRequestDTO.getPage();
+		if (chatMessageSearch.isLatest()) {
+			long total = chatMessageRepository.countByChatRoomRoomId(roomId);
+			page = total == 0 ? 1 : (int) Math.ceil((double) total / pageRequestDTO.getSize());
+			pageRequestDTO.setPage(page);
+		}
+
+		Page<ChatMessage> messages = chatMessageService.getMessagesByRoomId(
+			roomId,
+			chatMessageSearch.getMessageContent(),
+			chatMessageSearch.getMessageType(),
+			PageRequest.of(Math.max(page, 1) - 1, pageRequestDTO.getSize()));
 		List<Long> readCursors = chatParticipantRepository.findReadCursorsByRoomId(roomId);
 
-		// 3. 각 메시지별로 안 읽은 사람 수 계산
-		return messages.stream().map(msg -> {
-			// 내 메시지 ID보다 '작은' 커서를 가진 사람 수 = 아직 이 메시지를 못 본 사람
+		List<ChatMessageDto> content = messages.getContent().stream().map(msg -> {
 			long unreadCount = readCursors.stream()
 				.filter(cursor -> cursor < msg.getId())
 				.count();
@@ -118,43 +127,14 @@ public class ChatService {
 				.senderEmail(msg.getMember().getEmail())
 				.senderName(msg.getMember().getName())
 				.message(msg.getContent())
+				.messageType(msg.getMessageType())
 				.createdAt(msg.getCreatedTime())
 				.messageId(msg.getId())
-				.unreadCount((int)unreadCount) // 계산된 수치 주입
+				.unreadCount((int) unreadCount)
 				.build();
 		}).collect(Collectors.toList());
 
-	}
-
-	public PageResponseDTO<ChatMessageDto> getChatHistoryPaged(
-		ChatMessageSearch chatMessageSearch,
-		PageRequestDTO pageRequestDTO,
-		Member member) {
-		// // 내가 해당 채팅방의 참여자가 아닐 경우 에러
-		// // 채팅방 조회
-		// ChatRoom chatRoom = chatRoomRepository.findByRoomId(chatMessageSearch.getRoomId()).orElseThrow(
-		// 	() -> new EntityNotFoundException("채팅방이 존재하지 않습니다.")
-		// );
-		//
-		// chatParticipantService.isParticipantMember(chatRoom.getId(), member.getId());
-		//
-		// // 페이징된 메시지 조회
-		// PageResponseDTO<ChatMessageDto> pagedMessages = chatMessageRepository.findPagedMessagesByRoomId(
-		// 	chatMessageSearch, pageRequestDTO);
-		//
-		// // 3. 각 메시지별로 안 읽은 사람 수 계산
-		// List<Long> readCursors = chatParticipantRepository.findReadCursorsByRoomId(chatMessageSearch.getRoomId());
-		//
-		// pagedMessages.getDtoList().forEach(msgDto -> {
-		// 	// 내 메시지 ID보다 '작은' 커서를 가진 사람 수 = 아직 이 메시지를 못 본 사람
-		// 	long unreadCount = readCursors.stream()
-		// 		.filter(cursor -> cursor < msgDto.getMessageId())
-		// 		.count();
-		// 	msgDto.setUnreadCount((int)unreadCount); // 계산된 수치 주입
-		// });
-		//
-		// return pagedMessages;
-		return new PageResponseDTO<>();
+		return new PageResponseDTO<>(content, messages.getTotalElements(), pageRequestDTO);
 	}
 
 	public boolean isRoomParticipant(String publicId, String roomId) {

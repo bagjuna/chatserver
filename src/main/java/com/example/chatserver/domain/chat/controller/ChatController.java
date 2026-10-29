@@ -47,24 +47,15 @@ public class ChatController {
     }
 
 
-    // 이전 메시지 조회
-    @GetMapping("/history/{roomId}")
-    public ResponseEntity<?> getChatHistory(@PathVariable String roomId,
-        @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Member member = userDetails.getMember();
-        List<ChatMessageDto> chatMessageDtos = chatService.getChatHistory(roomId, member.getPublicId());
-        return new ResponseEntity<>(chatMessageDtos, HttpStatus.OK);
-    }
-
     @GetMapping("/history/{roomId}/paged")
     public ResponseEntity<PageResponseDTO<ChatMessageDto>> getChatHistoryPaged(
         @ModelAttribute ChatMessageSearch chatMessageSearch,
         // 예: /history/{roomId}/paged?
         @ModelAttribute PageRequestDTO pageRequestDTO,
-        @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable String roomId) {
         Member member = userDetails.getMember();
-        return new ResponseEntity<>(chatService.getChatHistoryPaged(chatMessageSearch, pageRequestDTO, member), HttpStatus.OK);
+        return new ResponseEntity<>(chatService.getChatHistoryPaged(chatMessageSearch, roomId, pageRequestDTO, member), HttpStatus.OK);
     }
 
     // 참여자 목록 조회
